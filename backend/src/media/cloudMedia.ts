@@ -92,5 +92,28 @@ export const CLOUD_MEDIA: Record<string, string> = {
 export function cloudMedia(localPath: string | null | undefined): string | null {
   if (!localPath) return null;
   if (/^https?:\/\//i.test(localPath)) return localPath;
-  return CLOUD_MEDIA[localPath] ?? localPath;
+  const key = localPath.startsWith("/") ? localPath : `/${localPath}`;
+  return (
+    CLOUD_MEDIA[key] ??
+    CLOUD_MEDIA[key.replace(/\.JPG$/i, ".jpg")] ??
+    CLOUD_MEDIA[key.replace(/\.JPEG$/i, ".jpeg")] ??
+    CLOUD_MEDIA[key.replace(/\.PNG$/i, ".png")] ??
+    localPath
+  );
+}
+
+/** Remap any /images avatar still on disk paths after Cloudinary sync. */
+export function remapUserAvatars(
+  users: Iterable<{ avatar_url: string | null }>,
+): number {
+  let n = 0;
+  for (const u of users) {
+    if (!u.avatar_url || u.avatar_url.startsWith("http")) continue;
+    const next = cloudMedia(u.avatar_url);
+    if (next && next !== u.avatar_url) {
+      u.avatar_url = next;
+      n += 1;
+    }
+  }
+  return n;
 }

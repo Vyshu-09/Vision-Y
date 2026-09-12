@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
-import { remapUserAvatars } from "../media/cloudMedia.js";
+import { remapUserAvatars } from "../media/remapAvatars.js";
 import { seedDemoData } from "./seed.js";
 import { store } from "./store.js";
 import type {

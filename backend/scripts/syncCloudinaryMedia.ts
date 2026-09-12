@@ -122,7 +122,14 @@ export const CLOUD_MEDIA: Record<string, string> = ${JSON.stringify(map, null, 2
 export function cloudMedia(localPath: string | null | undefined): string | null {
   if (!localPath) return null;
   if (/^https?:\\/\\//i.test(localPath)) return localPath;
-  return CLOUD_MEDIA[localPath] ?? localPath;
+  const key = localPath.startsWith("/") ? localPath : \`/\${localPath}\`;
+  return (
+    CLOUD_MEDIA[key] ??
+    CLOUD_MEDIA[key.replace(/\\.JPG$/i, ".jpg")] ??
+    CLOUD_MEDIA[key.replace(/\\.JPEG$/i, ".jpeg")] ??
+    CLOUD_MEDIA[key.replace(/\\.PNG$/i, ".png")] ??
+    localPath
+  );
 }
 `;
   fs.writeFileSync(outFile, body, "utf8");
