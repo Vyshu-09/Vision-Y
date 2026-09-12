@@ -234,6 +234,51 @@ adminRouter.post("/policies/:id/reject", (req, res) => {
   res.json({ policy: updated });
 });
 
+/** Mark an active (or under-review) policy as superseded — still stored, not searchable as CURRENT. */
+adminRouter.post("/policies/:id/supersede", (req, res) => {
+  const policy = store.getPolicy(req.params.id);
+  if (!policy) {
+    res.status(404).json({ error: "Policy not found" });
+    return;
+  }
+  if (policy.status === "superseded") {
+    res.status(400).json({ error: "Policy is already superseded" });
+    return;
+  }
+  const updated = store.updatePolicy(policy.id, { status: "superseded" });
+  notifyForEvent({
+    event: "policy_updated",
+    roles: ["super_admin"],
+    severity: "warning",
+    title: `Policy superseded: ${policy.title}`,
+    body: `${policy.title} (${policy.version_year}) was marked superseded by Super Admin.`,
+    policyId: policy.id,
+  });
+  res.json({ policy: updated });
+});
+
+/** Permanently remove a policy and its clauses from the store. */
+adminRouter.delete("/policies/:id", (req, res) => {
+  const policy = store.getPolicy(req.params.id);
+  if (!policy) {
+    res.status(404).json({ error: "Policy not found" });
+    return;
+  }
+  const ok = store.deletePolicy(policy.id);
+  if (!ok) {
+    res.status(500).json({ error: "Delete failed" });
+    return;
+  }
+  notifyForEvent({
+    event: "policy_updated",
+    roles: ["super_admin"],
+    severity: "critical",
+    title: `Policy deleted: ${policy.title}`,
+    body: `${policy.title} (${policy.version_year}) was permanently deleted by Super Admin.`,
+  });
+  res.json({ ok: true, deleted_id: policy.id });
+});
+
 adminRouter.post("/supersessions/:id/reject", (req, res) => {
   const row = store.supersessions.get(req.params.id);
   if (!row || row.status !== "pending") {

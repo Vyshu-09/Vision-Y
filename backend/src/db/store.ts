@@ -116,6 +116,29 @@ class MemoryStore {
     return updated;
   }
 
+  /** Hard-delete a policy and clean related clauses / queue rows. */
+  deletePolicy(id: string): boolean {
+    if (!this.policies.has(id)) return false;
+    this.policies.delete(id);
+    for (const [cid, clause] of [...this.clauses.entries()]) {
+      if (clause.policy_id === id) this.clauses.delete(cid);
+    }
+    for (const [sid, row] of [...this.supersessions.entries()]) {
+      if (row.old_policy_id === id || row.new_policy_id === id) this.supersessions.delete(sid);
+    }
+    for (const [cid, row] of [...this.conflicts.entries()]) {
+      if (row.policy_a_id === id || row.policy_b_id === id) this.conflicts.delete(cid);
+    }
+    for (const [fid, row] of [...this.flags.entries()]) {
+      if (row.policy_id === id) this.flags.delete(fid);
+    }
+    for (const [nid, row] of [...this.notifications.entries()]) {
+      if (row.policy_id === id) this.notifications.delete(nid);
+    }
+    this.emitChange();
+    return true;
+  }
+
   insertClause(clause: PolicyClause): PolicyClause {
     this.clauses.set(clause.id, clause);
     this.emitChange();

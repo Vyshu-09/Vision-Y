@@ -148,6 +148,17 @@ export const api = {
       body: "{}",
     }),
 
+  supersedePolicy: (id: string) =>
+    request<{ policy: PolicyRow }>(`/api/admin/policies/${id}/supersede`, {
+      method: "POST",
+      body: "{}",
+    }),
+
+  deletePolicy: (id: string) =>
+    request<{ ok: boolean; deleted_id: string }>(`/api/admin/policies/${id}`, {
+      method: "DELETE",
+    }),
+
   approveSupersession: (id: string, notify_roles?: string[]) =>
     request<{ supersession: unknown; notified_roles?: string[] }>(`/api/admin/supersessions/${id}/approve`, {
       method: "POST",

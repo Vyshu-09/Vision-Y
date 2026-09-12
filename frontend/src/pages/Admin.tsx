@@ -1,11 +1,12 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { api } from "../api/client";
 import { DashboardInsights } from "../components/DashboardCharts";
-import type { ClarificationTicket, ReviewQueue } from "../types";
+import type { ClarificationTicket, PolicyRow, ReviewQueue } from "../types";
 
 export function AdminPage() {
   const [queue, setQueue] = useState<ReviewQueue | null>(null);
   const [clarifications, setClarifications] = useState<ClarificationTicket[]>([]);
+  const [policies, setPolicies] = useState<PolicyRow[]>([]);
   const [unread, setUnread] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -42,14 +43,16 @@ export function AdminPage() {
 
   async function load() {
     try {
-      const [q, c, n] = await Promise.all([
+      const [q, c, n, p] = await Promise.all([
         api.reviewQueue(),
         api.clarifications(),
         api.notifications(),
+        api.policies(),
       ]);
       setQueue(q);
       setClarifications(c.clarifications);
       setUnread(n.unread);
+      setPolicies(p.policies);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load admin queue");
@@ -136,6 +139,8 @@ export function AdminPage() {
             {(
               [
                 ["upload", "Upload"],
+                ["manage", "Manage"],
+                ["pending", "Review"],
                 ["versions", "Versions"],
                 ["conflicts", "Conflicts"],
                 ["clarifications", "Clarifications"],
@@ -347,7 +352,7 @@ export function AdminPage() {
 
       <QueueSection
         id="pending"
-        title="Pending policies"
+        title="Pending policies — review"
         empty="No standalone under-review policies."
         items={queue.pending_policies.map((p) => (
           <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line py-3">
@@ -357,7 +362,7 @@ export function AdminPage() {
                 {p.category} · {p.version_year} · {p.clause_count ?? 0} clauses
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 className="ui-btn ui-btn-primary text-sm"
@@ -370,14 +375,96 @@ export function AdminPage() {
                   })
                 }
               >
-                Activate & notify
+                Approve & activate
               </button>
               <button
                 type="button"
                 className="ui-btn ui-btn-ghost text-sm"
-                onClick={() => void api.rejectPolicy(p.id).then(load)}
+                onClick={() =>
+                  void api.supersedePolicy(p.id).then(async () => {
+                    setMessage(`Superseded “${p.title}” (kept in archive, not CURRENT).`);
+                    await load();
+                  })
+                }
               >
-                Reject
+                Supersede
+              </button>
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost text-sm text-red-700"
+                onClick={() => {
+                  if (!window.confirm(`Permanently delete “${p.title}”?`)) return;
+                  void api.deletePolicy(p.id).then(async () => {
+                    setMessage(`Deleted “${p.title}”.`);
+                    await load();
+                  });
+                }}
+              >
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      />
+
+      <QueueSection
+        id="manage"
+        title="Manage policies"
+        empty="No policies in the library."
+        items={policies.map((p) => (
+          <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 border-b border-line py-3">
+            <div>
+              <p className="font-semibold text-navy">{p.title}</p>
+              <p className="text-xs text-muted">
+                {p.category} · {p.version_year} · {p.authority_level} ·{" "}
+                <span className="font-semibold uppercase">
+                  {p.status === "active" ? "CURRENT" : p.status.replace("_", " ")}
+                </span>
+              </p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {p.status === "under_review" && (
+                <button
+                  type="button"
+                  className="ui-btn ui-btn-primary text-sm"
+                  onClick={() =>
+                    void api.activatePolicy(p.id, selectedRoles(notifyRoles)).then(async (res) => {
+                      setMessage(
+                        `Activated “${p.title}”. Notified: ${(res.notified_roles ?? []).join(", ") || "none"}.`,
+                      );
+                      await load();
+                    })
+                  }
+                >
+                  Approve & activate
+                </button>
+              )}
+              {p.status !== "superseded" && (
+                <button
+                  type="button"
+                  className="ui-btn ui-btn-ghost text-sm"
+                  onClick={() =>
+                    void api.supersedePolicy(p.id).then(async () => {
+                      setMessage(`Superseded “${p.title}”.`);
+                      await load();
+                    })
+                  }
+                >
+                  Supersede
+                </button>
+              )}
+              <button
+                type="button"
+                className="ui-btn ui-btn-ghost text-sm text-red-700"
+                onClick={() => {
+                  if (!window.confirm(`Permanently delete “${p.title}”? This cannot be undone.`)) return;
+                  void api.deletePolicy(p.id).then(async () => {
+                    setMessage(`Deleted “${p.title}”.`);
+                    await load();
+                  });
+                }}
+              >
+                Delete
               </button>
             </div>
           </div>
@@ -419,6 +506,20 @@ export function AdminPage() {
                   onClick={() => void api.rejectSupersession(s.id).then(load)}
                 >
                   Reject
+                </button>
+                <button
+                  type="button"
+                  className="ui-btn ui-btn-ghost text-sm text-red-700"
+                  onClick={() => {
+                    const newId = s.new_policy_id;
+                    if (!window.confirm("Delete the new policy version and drop this review?")) return;
+                    void api.deletePolicy(newId).then(async () => {
+                      setMessage("Deleted new policy version.");
+                      await load();
+                    });
+                  }}
+                >
+                  Delete new
                 </button>
               </div>
             </div>
