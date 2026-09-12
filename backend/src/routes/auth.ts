@@ -9,7 +9,7 @@ import { config } from "../config.js";
 import { publicUser, store } from "../db/store.js";
 import { requireAuth, signToken, type AuthPayload } from "../middleware/auth.js";
 import { isCloudinaryConfigured, uploadImageBuffer } from "../services/cloudinary.js";
-import { normalizeRole } from "../types.js";
+import { normalizeRole, type Role } from "../types.js";
 
 export const authRouter = Router();
 
@@ -121,9 +121,18 @@ authRouter.post("/avatar", requireAuth, (req, res) => {
       try {
         let avatar_url: string;
         if (useCloudinary && req.file.buffer) {
+          const role = (req.auth!.role ?? "student") as Role;
+          const roleFolder =
+            role === "super_admin"
+              ? "admin"
+              : role === "faculty"
+                ? "faculty"
+                : role === "staff"
+                  ? "staff"
+                  : "students";
           avatar_url = await uploadImageBuffer(
             req.file.buffer,
-            "vision-y/avatars",
+            `vision-y/users/${roleFolder}`,
             `user-${req.auth!.userId}`,
           );
         } else {

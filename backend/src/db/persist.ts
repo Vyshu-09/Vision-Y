@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
+import { remapUserAvatars } from "../media/cloudMedia.js";
 import { seedDemoData } from "./seed.js";
 import { store } from "./store.js";
 import type {
@@ -114,6 +115,12 @@ export function bootstrapPersistentStore(): void {
     seedDemoData();
     saveNow();
     console.log(`[persist] Seeded demo data → ${dataFilePath()}`);
+  } else {
+    const remapped = remapUserAvatars(store.users.values());
+    if (remapped > 0) {
+      saveNow();
+      console.log(`[persist] Remapped ${remapped} avatar URLs to Cloudinary`);
+    }
   }
   persistReady = true;
   store.onChange(scheduleSave);

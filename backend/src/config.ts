@@ -9,7 +9,7 @@ export const config = {
   uploadDir: process.env.UPLOAD_DIR ?? "./uploads",
   /** JSON snapshot of the in-memory store (survives restarts). */
   dataFile: process.env.DATA_FILE ?? "./data/store.json",
-  cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? "",
+  cloudinaryCloudName: (process.env.CLOUDINARY_CLOUD_NAME ?? "").trim().toLowerCase(),
   cloudinaryApiKey: process.env.CLOUDINARY_API_KEY ?? "",
   cloudinaryApiSecret: process.env.CLOUDINARY_API_SECRET ?? "",
 };

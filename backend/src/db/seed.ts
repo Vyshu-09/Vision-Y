@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { embedText } from "../embeddings/embedder.js";
+import { cloudMedia } from "../media/cloudMedia.js";
 import { store } from "./store.js";
 import type { Policy, PolicyClause, Role, User } from "../types.js";
 
@@ -19,7 +20,7 @@ function user(
     password_hash: bcrypt.hashSync(partial.password, 10),
     role: partial.role,
     department: partial.department,
-    avatar_url: partial.avatar_url ?? null,
+    avatar_url: cloudMedia(partial.avatar_url ?? null),
     designation: partial.designation ?? null,
     employee_id: partial.employee_id ?? null,
     phone: partial.phone ?? null,
