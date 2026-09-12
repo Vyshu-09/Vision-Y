@@ -2,38 +2,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { config } from "../config.js";
 import { remapUserAvatars } from "../media/remapAvatars.js";
+import { connectMongo, isMongoConfigured } from "./mongo.js";
+import { loadSnapshotFromMongo, saveSnapshotToMongo, type StoreSnapshot } from "./mongoStore.js";
 import { seedDemoData } from "./seed.js";
 import { store } from "./store.js";
-import type {
-  Circular,
-  ClarificationTicket,
-  ConflictRecord,
-  FlagRecord,
-  Notification,
-  Policy,
-  PolicyClause,
-  QueryRecord,
-  SupersessionReview,
-  User,
-} from "../types.js";
-
-interface StoreSnapshot {
-  version: 1;
-  saved_at: string;
-  users: User[];
-  policies: Policy[];
-  clauses: PolicyClause[];
-  circulars: Circular[];
-  queries: QueryRecord[];
-  flags: FlagRecord[];
-  conflicts: ConflictRecord[];
-  supersessions: SupersessionReview[];
-  notifications: Notification[];
-  clarifications: ClarificationTicket[];
-}
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let persistReady = false;
+let persistMode: "mongo" | "file" = "file";
 
 function dataFilePath(): string {
   return path.resolve(config.dataFile);
@@ -69,7 +45,7 @@ function applySnapshot(snap: StoreSnapshot): void {
   store.clarifications = new Map(snap.clarifications.map((t) => [t.id, t]));
 }
 
-function saveNow(): void {
+function saveFileNow(): void {
   const file = dataFilePath();
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.tmp`;
@@ -77,19 +53,32 @@ function saveNow(): void {
   fs.renameSync(tmp, file);
 }
 
+async function saveNow(): Promise<void> {
+  const snap = toSnapshot();
+  if (persistMode === "mongo") {
+    await saveSnapshotToMongo(snap);
+    // Keep a local backup copy too
+    try {
+      saveFileNow();
+    } catch {
+      /* ignore backup failures */
+    }
+    return;
+  }
+  saveFileNow();
+}
+
 function scheduleSave(): void {
   if (!persistReady) return;
   if (saveTimer) clearTimeout(saveTimer);
   saveTimer = setTimeout(() => {
-    try {
-      saveNow();
-    } catch (err) {
+    void saveNow().catch((err) => {
       console.error("[persist] failed to save store:", err);
-    }
-  }, 400);
+    });
+  }, 500);
 }
 
-function tryLoad(): boolean {
+function tryLoadFile(): boolean {
   const file = dataFilePath();
   if (!fs.existsSync(file)) return false;
   try {
@@ -97,31 +86,65 @@ function tryLoad(): boolean {
     const snap = JSON.parse(raw) as StoreSnapshot;
     if (!snap?.users?.length) return false;
     applySnapshot(snap);
-    console.log(`[persist] Loaded live data from ${file} (${snap.policies?.length ?? 0} policies)`);
+    console.log(`[persist] Loaded file data from ${file} (${snap.policies?.length ?? 0} policies)`);
     return true;
   } catch (err) {
-    console.error("[persist] Could not load store file, will reseed:", err);
+    console.error("[persist] Could not load store file:", err);
     return false;
   }
 }
 
 /**
- * Load previous session from disk if present; otherwise seed demo data.
- * Then auto-save on every store mutation so uploads/chats survive restarts.
+ * Prefer MongoDB when MONGODB_URI is set.
+ * Migrates local store.json → Mongo on first connect if Atlas is empty.
  */
-export function bootstrapPersistentStore(): void {
-  const loaded = tryLoad();
-  if (!loaded) {
-    seedDemoData();
-    saveNow();
-    console.log(`[persist] Seeded demo data → ${dataFilePath()}`);
+export async function bootstrapPersistentStore(): Promise<void> {
+  if (isMongoConfigured()) {
+    try {
+      await connectMongo();
+      persistMode = "mongo";
+      const mongoSnap = await loadSnapshotFromMongo();
+      if (mongoSnap?.users?.length) {
+        applySnapshot(mongoSnap);
+        console.log(
+          `[persist] Loaded MongoDB data (${mongoSnap.policies.length} policies, ${mongoSnap.users.length} users)`,
+        );
+      } else if (tryLoadFile()) {
+        await saveSnapshotToMongo(toSnapshot());
+        console.log(`[persist] Migrated local store.json → MongoDB`);
+      } else {
+        seedDemoData();
+        await saveNow();
+        console.log(`[persist] Seeded demo data → MongoDB`);
+      }
+    } catch (err) {
+      console.error("[persist] MongoDB unavailable, falling back to file:", err);
+      persistMode = "file";
+      if (!tryLoadFile()) {
+        seedDemoData();
+        saveFileNow();
+        console.log(`[persist] Seeded demo data → ${dataFilePath()}`);
+      }
+    }
   } else {
-    const remapped = remapUserAvatars(store.users.values());
-    if (remapped > 0) {
-      saveNow();
-      console.log(`[persist] Remapped ${remapped} avatar URLs to Cloudinary`);
+    persistMode = "file";
+    if (!tryLoadFile()) {
+      seedDemoData();
+      saveFileNow();
+      console.log(`[persist] Seeded demo data → ${dataFilePath()}`);
     }
   }
+
+  const remapped = remapUserAvatars(store.users.values());
+  if (remapped > 0) {
+    await saveNow();
+    console.log(`[persist] Remapped ${remapped} avatar URLs to Cloudinary`);
+  }
+
   persistReady = true;
   store.onChange(scheduleSave);
+}
+
+export function getPersistMode(): "mongo" | "file" {
+  return persistMode;
 }
