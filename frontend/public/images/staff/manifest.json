@@ -1,0 +1,92 @@
+﻿[
+    {
+        "empcode":  "01447",
+        "name":  "Dr Srinivasadesikan V",
+        "desig":  "ASSOCIATE PROFESSOR",
+        "branch":  "CHEMISTRY",
+        "email":  "drvsd_sh@vignan.ac.in",
+        "phone":  "7406940340",
+        "avatar":  "/images/staff/profilepic01447.jpg"
+    },
+    {
+        "empcode":  "03054",
+        "name":  "Mrs R SWATHIKA",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "CA",
+        "email":  "rs_ca@vignan.ac.in",
+        "phone":  "9626494680",
+        "avatar":  "/images/staff/profilepic03054.JPG"
+    },
+    {
+        "empcode":  "01885",
+        "name":  "Dr Ayyanna D S",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "AGE",
+        "email":  "drads_ae@vignan.ac.in",
+        "phone":  "9606342663",
+        "avatar":  "/images/staff/profilepic01885.jpg"
+    },
+    {
+        "empcode":  "02339",
+        "name":  "Dr B N Naveen Kumar",
+        "desig":  "ASSOCIATE PROFESSOR",
+        "branch":  "MATHS AND STAT",
+        "email":  "drbn_stat@vignan.ac.in",
+        "phone":  "9032302638",
+        "avatar":  "/images/staff/profilepic02339.jpeg"
+    },
+    {
+        "empcode":  "02346",
+        "name":  "Dr Apoorva Singumahanthi",
+        "desig":  "ASSOCIATE PROFESSOR",
+        "branch":  "DMS",
+        "email":  "drsvga_mgt@vignan.ac.in",
+        "phone":  "9000591700",
+        "avatar":  "/images/staff/profilepic02346.jpeg"
+    },
+    {
+        "empcode":  "40019",
+        "name":  "Dr VIJAYA BHASKARARAO BONAM",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "SSH",
+        "email":  "drvbr_psy@vignan.ac.in",
+        "phone":  "",
+        "avatar":  "/images/staff/profilepic40019.jpeg"
+    },
+    {
+        "empcode":  "02490",
+        "name":  "Dr Shaik Mastan Sharif",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "ACSE",
+        "email":  "drsk_acse@vignan.ac.in",
+        "phone":  "9848129660",
+        "avatar":  "/images/staff/profilepic02490.JPG"
+    },
+    {
+        "empcode":  "01203",
+        "name":  "Mrs Nazma Sultana Shaik",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "IT",
+        "email":  "skns_it@vignan.ac.in",
+        "phone":  "9100844780",
+        "avatar":  "/images/staff/profilepic01203.png"
+    },
+    {
+        "empcode":  "30104",
+        "name":  "Dr KATIKALA HIMA BINDU",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "BME",
+        "email":  "hbk_ece@vignan.ac.in",
+        "phone":  "988521846",
+        "avatar":  "/images/staff/profilepic30104.jpeg"
+    },
+    {
+        "empcode":  "40018",
+        "name":  "Dr RAMESHBABU KUNCHALA",
+        "desig":  "ASSISTANT PROFESSOR",
+        "branch":  "PHYSICS",
+        "email":  "drrk_phy@vignan.ac.in",
+        "phone":  "9492425201",
+        "avatar":  "/images/staff/profilepic40018.jpg"
+    }
+]

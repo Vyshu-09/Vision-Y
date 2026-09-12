@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build / cache
+frontend/dist/
+backend/dist/
+*.tsbuildinfo
+.vite/
+
+# Env secrets (keep .env.example)
+.env
+backend/.env
+frontend/.env
+**/.env
+
+# Uploads & local data
+backend/uploads/
+backend/data/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Old recovery backups (do not ship)
+_recovered/
+_recovered2/
