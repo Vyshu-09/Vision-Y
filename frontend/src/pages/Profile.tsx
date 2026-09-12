@@ -1,6 +1,6 @@
 import { Pencil } from "lucide-react";
 import { useRef, useState } from "react";
-import { api } from "../api/client";
+import { api, assetUrl } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { roleLabel } from "../types";
 
@@ -112,7 +112,7 @@ export function ProfilePage() {
           <div className="relative shrink-0 self-start">
             {user.avatar_url && !broken ? (
               <img
-                src={user.avatar_url}
+                src={assetUrl(user.avatar_url) ?? undefined}
                 alt=""
                 className="h-28 w-28 rounded-full object-cover ring-1 ring-slate-200"
                 onError={() => setBroken(true)}

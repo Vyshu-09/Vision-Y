@@ -13,6 +13,23 @@ import type {
 const TOKEN_KEY = "unipolicy_token";
 const REMEMBER_KEY = "unipolicy_remember";
 
+/** Render API in production; empty in local Vite (proxy handles /api). */
+const API_BASE = (
+  (import.meta.env.VITE_API_URL as string | undefined) ??
+  (import.meta.env.PROD ? "https://vision-y.onrender.com" : "")
+).replace(/\/$/, "");
+
+export function apiUrl(path: string): string {
+  if (path.startsWith("http")) return path;
+  return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/** Resolve avatar / upload paths against the API host. */
+export function assetUrl(path: string | null | undefined): string | null {
+  if (!path) return null;
+  return apiUrl(path);
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY) ?? sessionStorage.getItem(TOKEN_KEY);
 }
@@ -41,7 +58,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = getToken();
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const res = await fetch(path, { ...init, headers });
+  const res = await fetch(apiUrl(path), { ...init, headers });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) {
     throw new Error((data as { error?: string }).error || `Request failed (${res.status})`);

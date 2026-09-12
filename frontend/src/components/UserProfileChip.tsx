@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { useState } from "react";
+import { assetUrl } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { roleLabel } from "../types";
 
@@ -24,7 +25,7 @@ export function UserProfileChip() {
     >
       {user.avatar_url && !broken ? (
         <img
-          src={user.avatar_url}
+          src={assetUrl(user.avatar_url) ?? undefined}
           alt=""
           className="h-9 w-9 shrink-0 rounded-full object-cover ring-2 ring-white/50"
           onError={() => setBroken(true)}

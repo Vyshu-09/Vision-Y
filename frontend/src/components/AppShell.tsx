@@ -1,4 +1,5 @@
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
+import { assetUrl } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { navForRole, type NavItem } from "../lib/nav";
 import { roleLabel, type Role } from "../types";
@@ -81,7 +82,7 @@ export function AppShell() {
           <div className="flex items-center gap-3">
             {user.avatar_url ? (
               <img
-                src={user.avatar_url}
+                src={assetUrl(user.avatar_url) ?? undefined}
                 alt=""
                 className="h-10 w-10 rounded-full object-cover ring-1 ring-line"
               />
