@@ -24,10 +24,16 @@ export function apiUrl(path: string): string {
   return `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-/** Resolve avatar / upload paths against the API host. */
+/** Resolve media URLs.
+ *  - `/uploads/...` live on the Render API
+ *  - `/images/...` live on the Vercel frontend (public/)
+ */
 export function assetUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  return apiUrl(path);
+  if (/^https?:\/\//i.test(path)) return path;
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (normalized.startsWith("/uploads")) return `${API_BASE}${normalized}`;
+  return normalized;
 }
 
 export function getToken(): string | null {
