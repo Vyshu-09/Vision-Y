@@ -8,6 +8,7 @@ import { z } from "zod";
 import { config } from "../config.js";
 import { publicUser, store } from "../db/store.js";
 import { requireAuth, signToken, type AuthPayload } from "../middleware/auth.js";
+import { isCloudinaryConfigured, uploadImageBuffer } from "../services/cloudinary.js";
 import { normalizeRole } from "../types.js";
 
 export const authRouter = Router();
@@ -15,15 +16,19 @@ export const authRouter = Router();
 const avatarDir = path.join(config.uploadDir, "avatars");
 fs.mkdirSync(avatarDir, { recursive: true });
 
+const useCloudinary = isCloudinaryConfigured();
+
 const avatarUpload = multer({
-  storage: multer.diskStorage({
-    destination: (_req, _file, cb) => cb(null, avatarDir),
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase() || ".png";
-      const safeExt = [".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(ext) ? ext : ".png";
-      cb(null, `${req.auth?.userId ?? "user"}-${Date.now()}${safeExt}`);
-    },
-  }),
+  storage: useCloudinary
+    ? multer.memoryStorage()
+    : multer.diskStorage({
+        destination: (_req, _file, cb) => cb(null, avatarDir),
+        filename: (req, file, cb) => {
+          const ext = path.extname(file.originalname).toLowerCase() || ".png";
+          const safeExt = [".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(ext) ? ext : ".png";
+          cb(null, `${req.auth?.userId ?? "user"}-${Date.now()}${safeExt}`);
+        },
+      }),
   limits: { fileSize: 3 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
     const ok = /^image\/(png|jpe?g|webp|gif)$/i.test(file.mimetype);
@@ -103,21 +108,41 @@ authRouter.get("/me", (req, res) => {
 
 authRouter.post("/avatar", requireAuth, (req, res) => {
   avatarUpload.single("avatar")(req, res, (err) => {
-    if (err) {
-      res.status(400).json({ error: err instanceof Error ? err.message : "Upload failed" });
-      return;
-    }
-    if (!req.file) {
-      res.status(400).json({ error: "Choose an image file to upload" });
-      return;
-    }
-    const avatar_url = `/uploads/avatars/${req.file.filename}`;
-    const updated = store.updateUser(req.auth!.userId, { avatar_url });
-    if (!updated) {
-      res.status(404).json({ error: "User not found" });
-      return;
-    }
-    res.json({ user: publicUser(updated) });
+    void (async () => {
+      if (err) {
+        res.status(400).json({ error: err instanceof Error ? err.message : "Upload failed" });
+        return;
+      }
+      if (!req.file) {
+        res.status(400).json({ error: "Choose an image file to upload" });
+        return;
+      }
+
+      try {
+        let avatar_url: string;
+        if (useCloudinary && req.file.buffer) {
+          avatar_url = await uploadImageBuffer(
+            req.file.buffer,
+            "vision-y/avatars",
+            `user-${req.auth!.userId}`,
+          );
+        } else {
+          avatar_url = `/uploads/avatars/${req.file.filename}`;
+        }
+
+        const updated = store.updateUser(req.auth!.userId, { avatar_url });
+        if (!updated) {
+          res.status(404).json({ error: "User not found" });
+          return;
+        }
+        res.json({ user: publicUser(updated) });
+      } catch (uploadErr) {
+        console.error("[avatar]", uploadErr);
+        res.status(500).json({
+          error: uploadErr instanceof Error ? uploadErr.message : "Cloudinary upload failed",
+        });
+      }
+    })();
   });
 });
 

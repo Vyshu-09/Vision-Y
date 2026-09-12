@@ -4,6 +4,7 @@ import path from "node:path";
 import { config } from "./config.js";
 import { bootstrapPersistentStore } from "./db/persist.js";
 import { isLlmConfigured } from "./llm/llmClient.js";
+import { isCloudinaryConfigured } from "./services/cloudinary.js";
 import { adminRouter } from "./routes/admin.js";
 import { authRouter } from "./routes/auth.js";
 import { chatRouter } from "./routes/chat.js";
@@ -26,6 +27,7 @@ app.get("/api/health", (_req, res) => {
     store: config.useInMemoryStore ? "memory+file" : "postgres",
     data_file: path.resolve(config.dataFile),
     llm: isLlmConfigured() ? "anthropic" : "mock",
+    cloudinary: isCloudinaryConfigured() ? "on" : "off",
   });
 });
 
