@@ -118,7 +118,11 @@ export async function bootstrapPersistentStore(): Promise<void> {
         console.log(`[persist] Seeded demo data → MongoDB`);
       }
     } catch (err) {
-      console.error("[persist] MongoDB unavailable, falling back to file:", err);
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[persist] MongoDB unavailable, falling back to file:", msg);
+      console.error(
+        "[persist] Tip: In Atlas → Network Access, allow 0.0.0.0/0 (or Render outbound IPs), then redeploy.",
+      );
       persistMode = "file";
       if (!tryLoadFile()) {
         seedDemoData();

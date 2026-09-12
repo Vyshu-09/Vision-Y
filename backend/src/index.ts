@@ -43,8 +43,9 @@ async function main() {
   app.use("/api/clarifications", clarificationsRouter);
   app.use("/api/admin", adminRouter);
 
-  app.listen(config.port, () => {
-    console.log(`UniPolicy AI API on http://localhost:${config.port}`);
+  const port = config.port;
+  app.listen(port, "0.0.0.0", () => {
+    console.log(`UniPolicy AI API on http://0.0.0.0:${port}`);
     console.log(`Persist: ${getPersistMode()}${isMongoConfigured() ? " (MongoDB Atlas)" : ""}`);
     console.log(`LLM: ${isLlmConfigured() ? "Anthropic Claude" : "mock (set ANTHROPIC_API_KEY to enable)"}`);
     console.log("Demo: student@ / student123 | faculty vignan emails / faculty123 | admin@ / admin123");
