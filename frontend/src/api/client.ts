@@ -9,6 +9,7 @@ import type {
   ReviewQueue,
   Role,
 } from "../types";
+import { cloudMedia } from "../lib/cloudMedia";
 
 const TOKEN_KEY = "unipolicy_token";
 const REMEMBER_KEY = "unipolicy_remember";
@@ -25,15 +26,16 @@ export function apiUrl(path: string): string {
 }
 
 /** Resolve media URLs.
- *  - `/uploads/...` live on the Render API
- *  - `/images/...` live on the Vercel frontend (public/)
+ *  - absolute https (Cloudinary) → unchanged
+ *  - `/uploads/...` → Render API
+ *  - `/images/...` → Cloudinary map when available, else local public/
  */
 export function assetUrl(path: string | null | undefined): string | null {
   if (!path) return null;
   if (/^https?:\/\//i.test(path)) return path;
   const normalized = path.startsWith("/") ? path : `/${path}`;
   if (normalized.startsWith("/uploads")) return `${API_BASE}${normalized}`;
-  return normalized;
+  return cloudMedia(normalized) ?? normalized;
 }
 
 export function getToken(): string | null {

@@ -38,7 +38,7 @@ export function AppShell() {
       <aside className="hidden w-64 shrink-0 flex-col border-r border-line bg-[#f3f4f6] md:flex">
         <div className="border-b border-line bg-white px-4 py-4">
           <img
-            src="/images/vignan-logo.png"
+            src={assetUrl("/images/vignan-logo.png") ?? undefined}
             alt="Vignan's University"
             className="h-11 w-auto max-w-full object-contain object-left"
             onError={(e) => {

@@ -54,22 +54,22 @@ function cloudTarget(relPosix: string): { folder: string; public_id: string } {
   const base = file.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9_-]/g, "_");
 
   if (parts[0] === "avatars" && parts[1] === "students") {
-    return { folder: "vision-y/students", public_id: base };
+    return { folder: "VISION-Y/students", public_id: base };
   }
   if (parts[0] === "faculty") {
-    return { folder: "vision-y/faculty", public_id: base };
+    return { folder: "VISION-Y/faculty", public_id: base };
   }
   if (parts[0] === "staff") {
-    return { folder: "vision-y/staff", public_id: base };
+    return { folder: "VISION-Y/staff", public_id: base };
   }
   if (parts[0] === "students") {
-    return { folder: "vision-y/avatars/placeholders", public_id: base };
+    return { folder: "VISION-Y/avatars/placeholders", public_id: base };
   }
   if (parts[0] === "avatars") {
-    return { folder: "vision-y/avatars/placeholders", public_id: base };
+    return { folder: "VISION-Y/avatars/placeholders", public_id: base };
   }
   // branding / root images
-  return { folder: "vision-y/branding", public_id: base };
+  return { folder: "VISION-Y/branding", public_id: base };
 }
 
 async function uploadOne(abs: string): Promise<{ local: string; url: string }> {

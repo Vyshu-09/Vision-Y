@@ -132,7 +132,7 @@ authRouter.post("/avatar", requireAuth, (req, res) => {
                   : "students";
           avatar_url = await uploadImageBuffer(
             req.file.buffer,
-            `vision-y/users/${roleFolder}`,
+            `VISION-Y/users/${roleFolder}`,
             `user-${req.auth!.userId}`,
           );
         } else {

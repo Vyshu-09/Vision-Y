@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
-import { getRememberPreference } from "../api/client";
+import { assetUrl, getRememberPreference } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { dashboardPath, type Role } from "../types";
 
@@ -125,9 +125,16 @@ export function LoginPage() {
       navigate(dashboardPath(loggedIn.role));
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Login failed";
+      const offline =
+        msg.includes("502") ||
+        msg.includes("Failed to fetch") ||
+        msg.includes("NetworkError") ||
+        msg.includes("Network request failed");
       setError(
-        msg.includes("502") || msg.includes("Failed to fetch") || msg.includes("NetworkError")
-          ? "Server is not reachable. Make sure the API is running on port 4000, then try again."
+        offline
+          ? import.meta.env.PROD
+            ? "Server is waking up or offline. Open https://vision-y.onrender.com/api/health, wait until it responds, then try again."
+            : "Server is not reachable. Run npm run dev (or start the backend on port 4000), then try again."
           : msg,
       );
     } finally {
@@ -145,7 +152,7 @@ export function LoginPage() {
             campusOk
               ? {
                   backgroundImage:
-                    "linear-gradient(160deg, rgba(11,42,102,0.82), rgba(11,42,102,0.55)), url(/images/login-campus.png)",
+                    `linear-gradient(160deg, rgba(11,42,102,0.82), rgba(11,42,102,0.55)), url(${assetUrl("/images/login-campus.png")})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                 }
@@ -155,7 +162,7 @@ export function LoginPage() {
           }
         />
         <img
-          src="/images/login-campus.png"
+          src={assetUrl("/images/login-campus.png") ?? undefined}
           alt=""
           className="hidden"
           onError={() => setCampusOk(false)}
@@ -164,7 +171,7 @@ export function LoginPage() {
         <div className="relative z-10 px-10 pt-12">
           <div className="inline-flex max-w-full items-center rounded-2xl bg-white p-4 shadow-lg shadow-black/20">
             <img
-              src="/images/vignan-logo.png"
+              src={assetUrl("/images/vignan-logo.png") ?? undefined}
               alt="Vignan's University"
               className="h-16 w-auto max-w-[min(100%,360px)] object-contain object-left"
               onError={(e) => {
@@ -201,7 +208,7 @@ export function LoginPage() {
           <div className="mb-6 flex items-center gap-3 lg:hidden">
             <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-line">
               <img
-                src="/images/vignan-logo.png"
+                src={assetUrl("/images/vignan-logo.png") ?? undefined}
                 alt="Vignan's University"
                 className="h-12 w-auto max-w-[220px] object-contain"
                 onError={(e) => {
