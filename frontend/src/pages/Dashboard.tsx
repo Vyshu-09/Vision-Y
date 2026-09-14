@@ -501,7 +501,7 @@ export function DashboardPage() {
   }, []);
 
   if (!user) return null;
-  if (user.role === "super_admin") return <AdminPage />;
+  if (user.role === "super_admin") return <AdminPage section="overview" />;
 
   const role = user.role as Exclude<Role, "super_admin">;
   const theme = ROLE_THEME[role];

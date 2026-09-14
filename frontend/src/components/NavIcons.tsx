@@ -2,9 +2,14 @@ import {
   Bell,
   BookOpen,
   FileText,
+  Flag,
+  FolderUp,
   Gauge,
+  GitCompare,
   History,
+  Layers,
   MessageSquareText,
+  ShieldAlert,
   UserRound,
   type LucideIcon,
 } from "lucide-react";
@@ -18,6 +23,13 @@ const ICONS: Record<NavIcon, LucideIcon> = {
   history: History,
   notifications: Bell,
   profile: UserRound,
+  upload: FolderUp,
+  manage: Layers,
+  review: ShieldAlert,
+  versions: GitCompare,
+  conflicts: GitCompare,
+  flags: Flag,
+  clarifications: MessageSquareText,
 };
 
 export function NavItemIcon({
@@ -27,6 +39,6 @@ export function NavItemIcon({
   name: NavIcon;
   className?: string;
 }) {
-  const Icon = ICONS[name];
+  const Icon = ICONS[name] ?? Gauge;
   return <Icon className={className} strokeWidth={1.75} aria-hidden />;
 }

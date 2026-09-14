@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Link, Navigate, Route, Routes } from "react-router-dom";
+import { Link, Navigate, Route, Routes, useParams } from "react-router-dom";
 import { useAuth } from "./auth/AuthContext";
 import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./components/ProtectedRoute";
@@ -11,7 +11,19 @@ import { LoginPage } from "./pages/Login";
 import { NotificationsPage } from "./pages/Notifications";
 import { PoliciesPage } from "./pages/Policies";
 import { ProfilePage } from "./pages/Profile";
+import { AdminPage, type AdminSection } from "./pages/Admin";
 import { dashboardPath, type Role } from "./types";
+
+const ADMIN_SECTIONS = new Set<AdminSection>([
+  "overview",
+  "upload",
+  "manage",
+  "review",
+  "versions",
+  "conflicts",
+  "flags",
+  "clarifications",
+]);
 
 function HomeRedirect() {
   const { user, ready } = useAuth();
@@ -49,6 +61,14 @@ function RoleGate({ roles, children }: { roles: Role[]; children: ReactNode }) {
     );
   }
   return children;
+}
+
+function AdminSectionPage() {
+  const { section } = useParams();
+  if (!section || !ADMIN_SECTIONS.has(section as AdminSection)) {
+    return <Navigate to="/app/dashboard" replace />;
+  }
+  return <AdminPage section={section as AdminSection} />;
 }
 
 export default function App() {
@@ -93,6 +113,14 @@ export default function App() {
             element={
               <RoleGate roles={["super_admin"]}>
                 <Navigate to="/app/dashboard" replace />
+              </RoleGate>
+            }
+          />
+          <Route
+            path="admin/:section"
+            element={
+              <RoleGate roles={["super_admin"]}>
+                <AdminSectionPage />
               </RoleGate>
             }
           />

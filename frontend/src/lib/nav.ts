@@ -7,7 +7,14 @@ export type NavIcon =
   | "circulars"
   | "history"
   | "notifications"
-  | "profile";
+  | "profile"
+  | "upload"
+  | "manage"
+  | "review"
+  | "versions"
+  | "conflicts"
+  | "flags"
+  | "clarifications";
 
 export interface NavItem {
   label: string;
@@ -26,7 +33,14 @@ export function navForRole(role: Role): NavItem[] {
     case "super_admin":
       return [
         { label: "Dashboard", to: "/app/dashboard", icon: "dashboard" },
-        { label: "Policies", to: "/app/policies", icon: "policies" },
+        { label: "Upload", to: "/app/admin/upload", icon: "upload" },
+        { label: "Manage policies", to: "/app/admin/manage", icon: "manage" },
+        { label: "Review", to: "/app/admin/review", icon: "review" },
+        { label: "Versions", to: "/app/admin/versions", icon: "versions" },
+        { label: "Conflicts", to: "/app/admin/conflicts", icon: "conflicts" },
+        { label: "Flags", to: "/app/admin/flags", icon: "flags" },
+        { label: "Clarifications", to: "/app/admin/clarifications", icon: "clarifications" },
+        { label: "Library", to: "/app/policies", icon: "policies" },
         ...sharedTail,
       ];
     default:
