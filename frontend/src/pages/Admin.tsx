@@ -556,14 +556,36 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
                   <button
                     type="button"
                     className="ui-btn ui-btn-primary text-sm"
-                    onClick={() => void api.resolveFlag(f.id, "Resolved by admin").then(load)}
+                    onClick={() =>
+                      void api
+                        .resolveFlag(f.id, "Resolved by admin")
+                        .then(async () => {
+                          setMessage("Flag resolved.");
+                          await load();
+                        })
+                        .catch(async (err) => {
+                          setError(err instanceof Error ? err.message : "Could not resolve flag");
+                          await load();
+                        })
+                    }
                   >
                     Resolve
                   </button>
                   <button
                     type="button"
                     className="ui-btn ui-btn-ghost text-sm"
-                    onClick={() => void api.rejectFlag(f.id).then(load)}
+                    onClick={() =>
+                      void api
+                        .rejectFlag(f.id)
+                        .then(async () => {
+                          setMessage("Flag rejected.");
+                          await load();
+                        })
+                        .catch(async (err) => {
+                          setError(err instanceof Error ? err.message : "Could not reject flag");
+                          await load();
+                        })
+                    }
                   >
                     Reject
                   </button>

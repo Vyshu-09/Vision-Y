@@ -322,8 +322,13 @@ adminRouter.post("/conflicts/:id/reject", (req, res) => {
 adminRouter.post("/flags/:id/resolve", (req, res) => {
   const notes = String(req.body.resolution_notes ?? "").trim();
   const existing = store.flags.get(req.params.id);
-  if (!existing || existing.status !== "open") {
-    res.status(404).json({ error: "Open flag not found" });
+  if (!existing) {
+    res.status(404).json({ error: "Flag not found — refresh Flags and try again" });
+    return;
+  }
+  // Idempotent: already closed flags are fine for demo / double-clicks
+  if (existing.status !== "open") {
+    res.json({ flag: existing, already_resolved: true });
     return;
   }
   const updated = store.updateFlag(req.params.id, {
@@ -353,8 +358,12 @@ adminRouter.post("/flags/:id/resolve", (req, res) => {
 
 adminRouter.post("/flags/:id/reject", (req, res) => {
   const existing = store.flags.get(req.params.id);
-  if (!existing || existing.status !== "open") {
-    res.status(404).json({ error: "Open flag not found" });
+  if (!existing) {
+    res.status(404).json({ error: "Flag not found — refresh Flags and try again" });
+    return;
+  }
+  if (existing.status !== "open") {
+    res.json({ flag: existing, already_resolved: true });
     return;
   }
   const updated = store.updateFlag(req.params.id, {
