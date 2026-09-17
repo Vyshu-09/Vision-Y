@@ -74,6 +74,21 @@ export function runAmbiguityAgent(question: string): AmbiguityResult {
     ]);
   }
 
+  // Bare scholarship percentage without category or criteria
+  const bareScholarshipPercentage =
+    /\bscholarship\b/.test(q) &&
+    /\b(percentage|percent|concession|discount)\b/.test(q) &&
+    !/\b(cgpa|gpa|minimum|needed|required|score|marks|cutoff|maintain|continuation|continue|sibling|brother|sister|sport|alumni|staff|sc|st|cap|defence|phd|first attempt)\b/.test(q);
+  if (bareScholarshipPercentage) {
+    return clarify("Vignan has different scholarship categories. Do you mean the academic scholarship, sibling scholarship, or another category?", [
+      { id: "academic_merit", label: "Academic Merit Scholarship" },
+      { id: "sibling_scholarship", label: "Sibling Scholarship (10%)" },
+      { id: "sports_quota", label: "Sports Quota Scholarship" },
+      { id: "sc_st_scholarship", label: "SC / ST Scholarship (25%)" },
+      { id: "alumni_staff", label: "Alumni / Staff Ward Scholarship" },
+    ]);
+  }
+
   // Very short / vague asks
   const vagueSingles = new Set([
     "help",

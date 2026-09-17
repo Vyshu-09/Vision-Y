@@ -492,6 +492,57 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
         }),
       );
     }
+
+    // 12. Scholarship Policy fixture
+    if (!store.listPolicies().some((p) => p.id === "test-sch-pol")) {
+      const schPol = normalizePolicy({
+        id: "test-sch-pol",
+        family_id: "SCHOLARSHIP_POLICY",
+        title: "Scholarships Policy",
+        category: "Scholarships",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["student", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(schPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-sch-clause-1",
+          policy_id: schPol.id,
+          clause_number: "1.1",
+          clause_text: "VFSTR Scholarship Policy, framed at the time of the institution's inception in 2009 is applicable to all meritorious students admitted into various programmes. Scholarships are awarded across merit, siblings, sports, alumni, and categories.",
+          section: "Scholarship Policy and Scope",
+          page_number: 1,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
+          embedding_vector: embedText("who can get the scholarship eligibility criteria merit admission"),
+        }),
+      );
+      store.insertClause(
+        normalizeClause({
+          id: "test-sch-clause-4",
+          policy_id: schPol.id,
+          clause_number: "4.1",
+          clause_text: "Scholarship for Siblings: 10% of tuition fee shall be offered at entry level as scholarship for the entire duration of study for those students whose siblings studying in Vignan's institutions. Continuation of Scholarships in subsequent years: All entry level scholarships will be continued all through the programmes provided he/she should have passed in all the subjects in first attempt, should have scored 70% or above in the preceding year without any backlogs, and cleared all dues.",
+          section: "Special Scholarships and Continuation Norms",
+          page_number: 2,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
+          embedding_vector: embedText("minimum cgpa percentage score required for scholarship continuation 70 percent siblings 10 percent"),
+        }),
+      );
+    }
   }
 
   ensureTestFixtures();
@@ -877,4 +928,68 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
       );
     }
   });
+
+  it("18. NLP Layer: minimum CGPA/score for scholarship answers with 70% without dumping unrelated categories", async () => {
+    const res = await runPolicyPipeline({
+      question: "minimum cgpa required for the scholarship",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.answer_text.includes("70%"), "Must state 70% threshold");
+    assert.ok(!res.answer_text.toLowerCase().startsWith("according to vignan university policy"), "Must not start with robotic prefix");
+    assert.ok(!res.answer_text.includes("Ø"), "Must not contain raw PDF bullet markers");
+    assert.ok(!res.answer_text.toLowerCase().includes("sibling"), "Must not dump unrelated sibling category into CGPA question");
+    assert.ok(res.sources.length > 0, "Must attach official source citation");
+  });
+
+  it("19. NLP Layer: sibling scholarship answers directly with 10% without dumping unrelated categories", async () => {
+    const res = await runPolicyPipeline({
+      question: "How much scholarship is given to siblings?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.answer_text.includes("10%"), "Must state 10% sibling scholarship");
+    assert.ok(res.answer_text.toLowerCase().includes("sibling"), "Must address siblings directly");
+    assert.ok(!res.answer_text.toLowerCase().startsWith("according to vignan university policy"), "Must start naturally");
+  });
+
+  it("20. NLP Layer: Who can get the scholarship answers with category overview in friendly English", async () => {
+    const res = await runPolicyPipeline({
+      question: "Who can get the scholarship?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.answer_text.toLowerCase().includes("eligibility") || res.answer_text.toLowerCase().includes("scholarship"), "Must explain eligibility");
+    assert.ok(!res.answer_text.toLowerCase().startsWith("according to vignan university policy"));
+  });
+
+  it("21. NLP Layer: Faculty leave rule answers directly in simple language", async () => {
+    const res = await runPolicyPipeline({
+      question: "What is the faculty leave rule?",
+      role: "faculty",
+      userId: "test-fac-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.answer_text.toLowerCase().includes("leave"), "Must explain leave rules");
+    assert.ok(!res.answer_text.toLowerCase().startsWith("according to vignan university policy"));
+  });
+
+  it("22. NLP Layer: Bare scholarship percentage asks for clarification", async () => {
+    const res = await runPolicyPipeline({
+      question: "What is the scholarship percentage?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.needs_clarification, true, "Must ask for clarification for ambiguous percentage question");
+    assert.ok(res.clarification_prompt?.toLowerCase().includes("scholarship categories"));
+  });
 });
+
