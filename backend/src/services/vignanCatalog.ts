@@ -108,9 +108,28 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
   {
     title: "Service Rules, Policies & Procedures",
     category: "HR",
-    description: "Roles, responsibilities, and expectations for faculty and staff.",
+    description: "Roles, responsibilities, leave rules, and expectations for faculty and staff.",
     pdf_url: "https://vignan.ac.in/Service%20Rules%20%28VFSTR%29.pdf",
     audience: FACULTY_STAFF,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+SERVICE RULES, POLICIES & PROCEDURES (HR MANUAL)
+
+Section 1: Faculty Leave Rules and Entitlements
+Clause 1.1: Casual Leave (CL) Entitlement
+Regular full-time faculty members are entitled to 15 days of Casual Leave (CL) in a calendar year. Casual leave must be applied for and sanctioned by the Head of Department (HOD) in advance, except in unforeseen emergencies.
+
+Clause 1.2: Academic and On-Duty (OD) Leave
+Faculty members are eligible for up to 15 days of On-Duty (OD) leave per calendar year to attend national and international conferences, workshops, Faculty Development Programmes (FDP), symposia, doctoral defense committees, and university examination duties.
+
+Clause 1.3: Maternity and Paternity Leave
+Female faculty members with at least one year of continuous service are entitled to 180 days (6 months) of paid maternity leave for up to two surviving children. Male employees are entitled to 15 days of paid paternity leave upon the birth of a child.
+
+Clause 1.4: Leave Regulations during Probation Period
+Faculty members serving their probation period are eligible for Casual Leave strictly on a pro-rata basis (1.25 days per completed month of service). Other long-term leaves, such as study leave, sabbatical leave, or extraordinary leave, are not admissible during the probation period.
+
+Section 2: Faculty Code of Professional Ethics
+Clause 2.1: Academic Responsibilities and Teaching Conduct
+Faculty members must exhibit utmost dedication to teaching, student mentoring, research publication, syllabus completion, and institutional governance with regular punctuality and adherence to academic calendars.`,
   },
   {
     title: "Admission Policy",
@@ -141,9 +160,26 @@ Students who wish to apply for revaluation or personal verification of end-semes
   {
     title: "Scholarships Policy",
     category: "Scholarships",
-    description: "Scholarship awarding framework for deserving students.",
+    description: "Scholarship awarding framework, eligibility, and continuation rules for students.",
     pdf_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
     audience: STUDENT,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+SCHOLARSHIPS POLICY & MERIT AWARDS GUIDELINES
+
+Section 1: Academic Merit and Entry Level Scholarships
+Clause 1.1: Entry Level Merit Scholarships
+Vignan University offers merit-based scholarships and tuition fee concessions at the time of admission to meritorious students based on ranks in V-SAT, JEE (Mains/Advanced), EAMCET, and intermediate/10+2 aggregate marks. Fee concessions range from 10% to 75% depending on the rank slab and merit category.
+
+Section 2: Special Category Scholarships
+Clause 2.1: Sibling Scholarship
+A 10% concession in tuition fee shall be offered at the entry level as a scholarship for the entire duration of study for students whose siblings are currently studying in Vignan's institutions.
+
+Clause 2.2: Category and Quota Scholarships
+The university provides 75% tuition fee scholarship for 10 seats to state/university level sports achievers and 50% scholarship for 10 seats to district level sports achievers. A 25% tuition fee concession is awarded to SC/ST students and children of armed/defence personnel. A 10% scholarship is awarded to wards of Vignan alumni, and 20% to wards of Vignan faculty and staff members.
+
+Section 3: Continuation of Scholarships and Backlog Eligibility Rules
+Clause 3.1: Academic Criteria for Continuation of Scholarship and Backlog Rules
+All entry-level scholarships and fee concessions will be continued in subsequent academic years provided the student passes all registered subjects in the first attempt, scores an aggregate of 70% or above in the preceding academic year without any backlogs, and maintains clean disciplinary conduct with no pending dues. Students with active backlogs, arrears, or failure in any subject are NOT eligible to receive or continue the scholarship until all backlogs are cleared.`,
   },
   {
     title: "Student Grievance Redressal Policy",
@@ -151,6 +187,15 @@ Students who wish to apply for revaluation or personal verification of end-semes
     description: "Fair grievance redressal system for students.",
     pdf_url: "https://vignan.ac.in/pdf/Policy%20for%20Student%20Grievance%20redressal.pdf",
     audience: STUDENT,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+STUDENT GRIEVANCE REDRESSAL POLICY & PROCEDURE
+
+Section 1: Grievance Redressal Mechanism
+Clause 1.1: Student Grievance Redressal Committee (SGRC)
+A dedicated Student Grievance Redressal Committee (SGRC) headed by a Senior Professor investigates student grievances relating to academic evaluation, fee payments, victimisation, harassment, and campus amenities.
+
+Clause 1.2: Procedure for Lodging Grievances
+Students may lodge grievances through the online portal or by submitting a written application to the Convener of the SGRC. The committee investigates each matter impartially and provides a written resolution within 15 working days.`,
   },
   {
     title: "Industrial Training Policy",
@@ -158,6 +203,15 @@ Students who wish to apply for revaluation or personal verification of end-semes
     description: "Internships and industrial training framework for students.",
     pdf_url: "https://vignan.ac.in/pdf/INDUSTRIAL%20TRAINING%20POLICY.pdf",
     audience: STUDENT_FACULTY,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+INDUSTRIAL TRAINING & INTERNSHIP POLICY
+
+Section 1: Mandatory Internship Framework
+Clause 1.1: Industrial Training Requirements and Credits
+All undergraduate students must complete mandatory industrial training / internship of 4 to 6 weeks duration during summer vacations or a full-semester internship in the final year with reputed industries or research organizations to earn prescribed academic credits.
+
+Clause 1.2: Industry Mentorship and Evaluation
+Students undergo continuous evaluation by an industry mentor and an internal faculty supervisor. Upon completion, students must submit a formal project report and appear for a viva-voce examination.`,
   },
   {
     title: "LMS Policy / Framework",

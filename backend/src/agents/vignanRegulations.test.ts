@@ -530,16 +530,123 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
       );
       store.insertClause(
         normalizeClause({
-          id: "test-sch-clause-4",
+          id: "test-sch-clause-1",
           policy_id: schPol.id,
-          clause_number: "4.1",
-          clause_text: "Scholarship for Siblings: 10% of tuition fee shall be offered at entry level as scholarship for the entire duration of study for those students whose siblings studying in Vignan's institutions. Continuation of Scholarships in subsequent years: All entry level scholarships will be continued all through the programmes provided he/she should have passed in all the subjects in first attempt, should have scored 70% or above in the preceding year without any backlogs, and cleared all dues.",
-          section: "Special Scholarships and Continuation Norms",
+          clause_number: "1.1",
+          clause_text: "VFSTR Scholarship Policy, framed at the time of the institution's inception in 2009 is applicable to all meritorious students admitted into various programmes. Scholarships are awarded across merit, siblings, sports, alumni, and categories.",
+          section: "Scholarship Policy and Scope",
+          page_number: 1,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
+          embedding_vector: embedText("who can get the scholarship eligibility criteria merit admission"),
+        }),
+      );
+      store.insertClause(
+        normalizeClause({
+          id: "test-sch-clause-2",
+          policy_id: schPol.id,
+          clause_number: "2.1",
+          clause_text: "Scholarship for Siblings: 10% of tuition fee shall be offered at entry level as scholarship for the entire duration of study for those students whose siblings studying in Vignan's institutions.",
+          section: "Special Scholarships and Sibling Concession",
           page_number: 2,
           source_type: "OFFICIAL_VIGNAN",
           document_type: "POLICY",
           source_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
-          embedding_vector: embedText("minimum cgpa percentage score required for scholarship continuation 70 percent siblings 10 percent"),
+          embedding_vector: embedText("scholarship for siblings 10% percent discount tuition fee brother sister"),
+        }),
+      );
+      store.insertClause(
+        normalizeClause({
+          id: "test-sch-clause-3",
+          policy_id: schPol.id,
+          clause_number: "3.1",
+          clause_text: "Continuation of Scholarships in subsequent years and Backlog Rules: All entry level scholarships will be continued in subsequent academic years provided the student passes in all registered subjects in the first attempt, scores an aggregate of 70% or above in the preceding academic year without any backlogs, and maintains clean disciplinary conduct with no pending dues. Students with active backlogs, arrears, or failure in any subject are NOT eligible to receive or continue the scholarship until all backlogs are cleared.",
+          section: "Continuation of Scholarships and Backlog Eligibility Rules",
+          page_number: 3,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/SCHOLARSHIPS%20POLICY.pdf",
+          embedding_vector: embedText("does students with backlogs get scholarship continuation rules 70 percent passing in first attempt without any backlogs"),
+        }),
+      );
+    }
+
+    // 4. Official Service Rules Policy fixture
+    if (!store.listPolicies().some((p) => p.id === "test-service-rules")) {
+      const srvPol = normalizePolicy({
+        id: "test-service-rules",
+        family_id: "SERVICE_RULES",
+        title: "Service Rules, Policies & Procedures",
+        category: "HR",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/Service%20Rules%20%28VFSTR%29.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(srvPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-srv-cl-1",
+          policy_id: srvPol.id,
+          clause_number: "1.1",
+          clause_text: "Casual Leave (CL) Entitlement: Regular full-time faculty members are entitled to 15 days of Casual Leave (CL) in a calendar year. Casual leave must be applied for and sanctioned by the Head of Department (HOD) in advance, except in unforeseen emergencies.",
+          section: "Casual Leave Entitlement",
+          page_number: 1,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/Service%20Rules%20%28VFSTR%29.pdf",
+          embedding_vector: embedText("can faculty take casual leave how many casual leaves regular faculty 15 days"),
+        }),
+      );
+      store.insertClause(
+        normalizeClause({
+          id: "test-srv-cl-2",
+          policy_id: srvPol.id,
+          clause_number: "1.2",
+          clause_text: "Academic and On-Duty (OD) Leave: Faculty members are eligible for up to 15 days of On-Duty (OD) leave per calendar year to attend national and international conferences, workshops, Faculty Development Programmes (FDP), symposia, doctoral defense committees, and university examination duties.",
+          section: "Academic and On-Duty Leave",
+          page_number: 2,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/Service%20Rules%20%28VFSTR%29.pdf",
+          embedding_vector: embedText("faculty on duty OD leave 15 days conferences workshops"),
+        }),
+      );
+      store.insertClause(
+        normalizeClause({
+          id: "test-srv-cl-3",
+          policy_id: srvPol.id,
+          clause_number: "1.3",
+          clause_text: "Maternity and Paternity Leave: Female faculty members with at least one year of continuous service are entitled to 180 days (6 months) of paid maternity leave for up to two surviving children. Male employees are entitled to 15 days of paid paternity leave upon the birth of a child.",
+          section: "Maternity and Paternity Leave",
+          page_number: 3,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/Service%20Rules%20%28VFSTR%29.pdf",
+          embedding_vector: embedText("maternity leave 180 days 6 months paternity leave 15 days"),
+        }),
+      );
+      store.insertClause(
+        normalizeClause({
+          id: "test-srv-cl-4",
+          policy_id: srvPol.id,
+          clause_number: "1.4",
+          clause_text: "Leave Regulations during Probation Period: Faculty members serving their probation period are eligible for Casual Leave strictly on a pro-rata basis (1.25 days per completed month of service). Other long-term leaves, such as study leave, sabbatical leave, or extraordinary leave, are not admissible during the probation period.",
+          section: "Leave Regulations during Probation Period",
+          page_number: 4,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/Service%20Rules%20%28VFSTR%29.pdf",
+          embedding_vector: embedText("can faculty take leave during probation period pro-rata casual leave 1.25 days"),
         }),
       );
     }
@@ -1085,6 +1192,97 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
     );
     assert.equal(hasWrongDoc, false, "B.Tech R25 Regulations / Honor clauses must be excluded from scholarship results");
     assert.equal(searchRes.candidates[0].policy_title, "Scholarships Policy");
+  });
+
+  it("30. Backlog Query with spelling error: 'does students with backlogs get scholrship?' returns No and does NOT return sibling scholarship", async () => {
+    const res = await runPolicyPipeline({
+      question: "does students with backlogs get scholrship?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0, "Must return sources");
+    assert.equal(res.sources[0].policy_title, "Scholarships Policy", "Source must be Scholarships Policy");
+    assert.ok(res.sources[0].section?.includes("Continuation") || res.sources[0].section?.includes("Backlog") || res.sources[0].clause_text?.includes("backlog"), "Must retrieve continuation/backlog clause");
+    assert.ok(!res.sources[0].clause_text?.includes("10% of tuition fee shall be offered at entry level as scholarship for the entire duration of study for those students whose siblings"), "Must NOT retrieve Sibling clause");
+    assert.ok(res.answer_text.startsWith("No"), "Answer must begin with 'No'");
+    assert.ok(res.answer_text.includes("backlogs") || res.answer_text.includes("not eligible"), "Answer must explain backlog ineligibility");
+  });
+
+  it("31. Cross-role Faculty Query: 'can faculty take casual leave?' returns 15 days from Service Rules", async () => {
+    const res = await runPolicyPipeline({
+      question: "can faculty take casual leave?",
+      role: "faculty",
+      userId: "test-faculty-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0, "Must return sources");
+    assert.equal(res.sources[0].policy_title, "Service Rules, Policies & Procedures", "Source must be Service Rules");
+    assert.ok(res.answer_text.includes("15 days"), "Answer must state 15 days");
+  });
+
+  it("32. Cross-role Faculty Query: 'how many casual leaves can faculty take?' returns 15 days", async () => {
+    const res = await runPolicyPipeline({
+      question: "how many casual leaves can faculty take?",
+      role: "faculty",
+      userId: "test-faculty-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0);
+    assert.ok(res.answer_text.includes("15 days"));
+  });
+
+  it("33. Cross-role Faculty Query: 'can faculty take leave during probation?' explains pro-rata Casual Leave", async () => {
+    const res = await runPolicyPipeline({
+      question: "can faculty take leave during probation?",
+      role: "faculty",
+      userId: "test-faculty-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0);
+    assert.equal(res.sources[0].policy_title, "Service Rules, Policies & Procedures");
+    assert.ok(res.answer_text.includes("pro-rata") || res.answer_text.includes("1.25 days"));
+  });
+
+  it("34. Cross-role Maternity Query: 'how many maternity leaves are faculty eligible for?' returns 180 days (6 months)", async () => {
+    const res = await runPolicyPipeline({
+      question: "how many maternity leaves are faculty eligible for?",
+      role: "faculty",
+      userId: "test-faculty-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0);
+    assert.ok(res.answer_text.includes("180 days") || res.answer_text.includes("6 months"));
+  });
+
+  it("35. Spelling error query: 'minmum attendence requried' normalizes and retrieves Academic Regulations", async () => {
+    const res = await runPolicyPipeline({
+      question: "minmum attendence requried",
+      role: "student",
+      userId: "test-student-id",
+      user_regulation: "R26",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0);
+    assert.ok(res.answer_text.includes("75%"));
+  });
+
+  it("36. Spelling error query: 'how to file grivance' normalizes and retrieves Grievance Policy", async () => {
+    const res = await runPolicyPipeline({
+      question: "how to file grivance",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0);
+    assert.ok(res.sources[0].policy_title.includes("Grievance"));
   });
 });
 

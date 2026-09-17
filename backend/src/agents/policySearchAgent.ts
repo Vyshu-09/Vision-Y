@@ -44,8 +44,32 @@ const STOP_WORDS = new Set([
   "in", "on", "my", "me", "do", "does", "how", "with", "about", "get", "give", "given", "tell"
 ]);
 
-export function extractTokens(text: string): string[] {
+/**
+ * Normalizes spelling mistakes commonly typed by users.
+ */
+export function normalizeSpelling(text: string): string {
+  if (!text) return "";
   return text
+    .replace(/\b(scholrship|scholarhips|scholarhip|scholership|scholaship|scholorship)\b/gi, "scholarship")
+    .replace(/\b(scholrships|scholarhipss|scholerships|scholaships)\b/gi, "scholarships")
+    .replace(/\b(bavklog|bavklogs|bcklog|bcklogs|backlogs|arrear|arrears)\b/gi, "backlog")
+    .replace(/\b(attendence|attandance|atendance|atendence)\b/gi, "attendance")
+    .replace(/\b(faculity|facuty|faclty)\b/gi, "faculty")
+    .replace(/\b(leavee|leavs|laeve)\b/gi, "leave")
+    .replace(/\b(percantage|percentge|persentage|percntage)\b/gi, "percentage")
+    .replace(/\b(requried|requierd|requird|requred)\b/gi, "required")
+    .replace(/\b(minmum|minumum|minimun)\b/gi, "minimum")
+    .replace(/\b(elgibility|eligiblity|elegibility|eligable)\b/gi, "eligibility")
+    .replace(/\b(grivance|grievence|grievenc)\b/gi, "grievance")
+    .replace(/\b(revalution|reevaluation)\b/gi, "revaluation")
+    .replace(/\b(admision|addmission|admisison)\b/gi, "admission")
+    .replace(/\b(cancilation|cancellaton|cancelation)\b/gi, "cancellation")
+    .replace(/\b(consultncy|consultensy)\b/gi, "consultancy")
+    .replace(/\b(reseach|reserch)\b/gi, "research");
+}
+
+export function extractTokens(text: string): string[] {
+  return normalizeSpelling(text)
     .toLowerCase()
     .replace(/[^a-z0-9%]+/g, " ")
     .split(/\s+/)
@@ -56,13 +80,14 @@ export function extractTokens(text: string): string[] {
  * Domain-first NLP Query Analysis & Normalization
  */
 export function analyzeQuery(question: string): QueryAnalysis {
-  const q = question.toLowerCase().trim();
+  const corrected = normalizeSpelling(question);
+  const q = corrected.toLowerCase().trim();
   const rawTokens = extractTokens(q);
 
   let domain: PolicyDomain = "GENERAL";
   let intent: QueryIntentType = "GENERAL_RULES";
   let subEntity: string | null = null;
-  let normalizedQuery = question;
+  let normalizedQuery = corrected;
 
   // 1. Policy Domain Detection
   if (/\b(scholarship|scholarships|stipend|htra|fee concession|merit award)\b/i.test(q)) {
@@ -73,7 +98,7 @@ export function analyzeQuery(question: string): QueryAnalysis {
     domain = "ATTENDANCE_REGULATION";
   } else if (/\b(revaluation|re-evaluation|script verification|exam fee|answer script)\b/i.test(q)) {
     domain = "EXAMINATION";
-  } else if (/\b(faculty leave|leave rule|casual leave|od leave|on duty|maternity leave|paternity leave)\b/i.test(q)) {
+  } else if (/\b(faculty leave|leave rule|leave rules|casual leave|od leave|on duty|maternity|paternity|probation leave)\b/i.test(q) || (/\bleave\b/i.test(q) && /\b(faculty|employee|staff|probation|casual|cl|maternity|paternity|od)\b/i.test(q))) {
     domain = "LEAVE";
   } else if (/\b(code of conduct|ragging|discipline|harassment|anti-ragging)\b/i.test(q)) {
     domain = "CONDUCT";
@@ -94,22 +119,28 @@ export function analyzeQuery(question: string): QueryAnalysis {
   }
 
   // 2. Sub-entity extraction
-  if (/\b(sibling|brother|sister)\b/i.test(q)) subEntity = "sibling";
+  if (/\b(backlog|backlogs|bavklog|bavklogs|arrear|arrears|failed|fail|fails)\b/i.test(q)) subEntity = "backlog";
+  else if (/\b(sibling|brother|sister)\b/i.test(q)) subEntity = "sibling";
   else if (/\b(cap|armed personnel|defence|army)\b/i.test(q)) subEntity = "cap";
   else if (/\b(sport|sports quota|athletics)\b/i.test(q)) subEntity = "sports";
   else if (/\b(sc\s*\/\s*st|sc|st)\b/i.test(q)) subEntity = "sc_st";
   else if (/\b(alumni)\b/i.test(q)) subEntity = "alumni";
   else if (/\b(staff|employee ward)\b/i.test(q)) subEntity = "staff";
+  else if (/\b(casual leave|cl\b)\b/i.test(q)) subEntity = "casual_leave";
+  else if (/\b(probation|probationary)\b/i.test(q)) subEntity = "probation";
+  else if (/\b(maternity|pregnancy)\b/i.test(q)) subEntity = "maternity";
+  else if (/\b(paternity)\b/i.test(q)) subEntity = "paternity";
+  else if (/\b(od\b|on duty|on-duty|academic leave)\b/i.test(q)) subEntity = "od_leave";
   else if (/\b(phd|research scholar)\b/i.test(q)) subEntity = "phd";
 
   // 3. Intent Detection
-  if (/\b(minimum|score|percentage|marks|cgpa|gpa|cutoff|threshold|needed|required)\b/i.test(q)) {
+  if (/\b(minimum|score|percentage|marks|cgpa|gpa|cutoff|threshold|needed|required|how many)\b/i.test(q)) {
     intent = "MINIMUM_ELIGIBILITY";
   } else if (/\b(how much|amount|concession|discount|share|ratio|percent)\b/i.test(q)) {
     intent = "AMOUNT_CONCESSION";
-  } else if (/\b(who can|who is|eligible|eligibility|can i apply|apply)\b/i.test(q)) {
+  } else if (/\b(who can|who is|eligible|eligibility|can i apply|apply|can faculty|can students|does students|do students)\b/i.test(q)) {
     intent = "WHO_CAN_APPLY";
-  } else if (/\b(condition|conditions|criteria|maintain|continue|continuation|subsequent years)\b/i.test(q)) {
+  } else if (/\b(condition|conditions|criteria|maintain|continue|continuation|subsequent years|backlog)\b/i.test(q)) {
     intent = "CONTINUATION_RULES";
   } else if (/\b(procedure|process|where to|how to|documents|form)\b/i.test(q)) {
     intent = "PROCEDURE_APPLY";
@@ -117,7 +148,11 @@ export function analyzeQuery(question: string): QueryAnalysis {
 
   // 4. Query Normalization & Synonym Expansion
   if (domain === "SCHOLARSHIP") {
-    if (intent === "MINIMUM_ELIGIBILITY" || intent === "CONTINUATION_RULES") {
+    if (subEntity === "backlog" || q.includes("backlog")) {
+      normalizedQuery = "Vignan University Scholarships Policy continuation of scholarships in subsequent years 70% passed in first attempt without any backlogs eligibility rules";
+      intent = "CONTINUATION_RULES";
+      subEntity = "backlog";
+    } else if (intent === "MINIMUM_ELIGIBILITY" || intent === "CONTINUATION_RULES") {
       normalizedQuery = "Vignan University Scholarships Policy minimum percentage score CGPA eligibility academic requirement 70% continuation criteria without backlogs";
     } else if (subEntity === "sibling") {
       normalizedQuery = "Vignan University Scholarships Policy Scholarship for Siblings 10% of tuition fee entry level duration of study";
@@ -141,7 +176,19 @@ export function analyzeQuery(question: string): QueryAnalysis {
   } else if (domain === "RESEARCH") {
     normalizedQuery = "Vignan University Research Policy seed money grants journal publication incentives SCI Scopus patent anti-plagiarism 10%";
   } else if (domain === "LEAVE") {
-    normalizedQuery = "Vignan University Service Rules faculty leave rules casual leave academic on duty maternity paternity leave";
+    if (subEntity === "casual_leave" || q.includes("casual")) {
+      normalizedQuery = "Vignan University Service Rules faculty Casual Leave CL entitlement 15 days calendar year HOD sanction";
+    } else if (subEntity === "probation" || q.includes("probation")) {
+      normalizedQuery = "Vignan University Service Rules faculty probation period leave regulations casual leave pro-rata 1.25 days per month";
+    } else if (subEntity === "maternity" || q.includes("maternity")) {
+      normalizedQuery = "Vignan University Service Rules female faculty maternity leave 180 days 6 months paid leave";
+    } else if (subEntity === "paternity" || q.includes("paternity")) {
+      normalizedQuery = "Vignan University Service Rules paternity leave 15 days paid leave male employees";
+    } else if (subEntity === "od_leave" || q.includes("duty") || q.includes("od")) {
+      normalizedQuery = "Vignan University Service Rules faculty on-duty OD leave 15 days conferences workshops examination duties";
+    } else {
+      normalizedQuery = "Vignan University Service Rules faculty leave rules casual leave academic on duty maternity paternity leave";
+    }
   }
 
   return {
@@ -299,20 +346,49 @@ export function runPolicySearchAgent(
       const sectionLower = clause.section.toLowerCase();
 
       if (analysis.domain === "SCHOLARSHIP") {
-        if (analysis.intent === "MINIMUM_ELIGIBILITY" || analysis.intent === "CONTINUATION_RULES") {
+        if (analysis.subEntity === "backlog") {
+          if (textLower.includes("backlog") || textLower.includes("first attempt") || sectionLower.includes("continuation") || sectionLower.includes("backlog")) {
+            intentScore += 0.65;
+          }
+          if (textLower.includes("sibling") && !textLower.includes("backlog")) {
+            intentScore -= 0.50;
+          }
+        } else if (analysis.subEntity === "sibling") {
+          if (textLower.includes("sibling") || textLower.includes("10%")) {
+            intentScore += 0.60;
+          }
+        } else if (analysis.subEntity === "sports") {
+          if (textLower.includes("sport") || textLower.includes("75%")) {
+            intentScore += 0.60;
+          }
+        } else if (analysis.intent === "MINIMUM_ELIGIBILITY" || analysis.intent === "CONTINUATION_RULES") {
           if (textLower.includes("70%") || textLower.includes("first attempt") || textLower.includes("continuation")) {
             intentScore += 0.45;
           }
           if (sectionLower.includes("continuation") || sectionLower.includes("special scholarships")) {
             intentScore += 0.30;
           }
-        } else if (analysis.subEntity === "sibling") {
-          if (textLower.includes("sibling") || textLower.includes("10%")) {
-            intentScore += 0.50;
+        }
+      } else if (analysis.domain === "LEAVE") {
+        if (analysis.subEntity === "casual_leave") {
+          if (textLower.includes("casual leave") || sectionLower.includes("casual leave") || textLower.includes("15 days")) {
+            intentScore += 0.60;
           }
-        } else if (analysis.subEntity === "sports") {
-          if (textLower.includes("sport") || textLower.includes("75%")) {
-            intentScore += 0.50;
+        } else if (analysis.subEntity === "probation") {
+          if (textLower.includes("probation") || sectionLower.includes("probation") || textLower.includes("1.25 days")) {
+            intentScore += 0.60;
+          }
+        } else if (analysis.subEntity === "maternity") {
+          if (textLower.includes("maternity") || sectionLower.includes("maternity") || textLower.includes("180 days")) {
+            intentScore += 0.60;
+          }
+        } else if (analysis.subEntity === "paternity") {
+          if (textLower.includes("paternity") || sectionLower.includes("paternity")) {
+            intentScore += 0.60;
+          }
+        } else if (analysis.subEntity === "od_leave") {
+          if (textLower.includes("on-duty") || textLower.includes("on duty") || sectionLower.includes("on-duty")) {
+            intentScore += 0.60;
           }
         }
       } else if (analysis.domain === "ADMISSION_REFUND") {

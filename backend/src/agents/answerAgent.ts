@@ -1,4 +1,5 @@
 import { complete } from "../llm/llmClient.js";
+import { normalizeSpelling } from "./policySearchAgent.js";
 import { candidateToSource, type AnswerAgentInput, type AnswerAgentOutput, type CandidateClause } from "./types.js";
 
 export const LOW_CONFIDENCE_THRESHOLD = 0.12;
@@ -35,7 +36,7 @@ export interface QueryIntent {
  * NLP Intent and Entity Extraction from user question
  */
 export function detectQueryIntent(question: string): QueryIntent {
-  const q = question.toLowerCase();
+  const q = normalizeSpelling(question).toLowerCase();
 
   // 1. Topic Identification
   let topic: QueryIntent["topic"] = "general";
@@ -65,24 +66,30 @@ export function detectQueryIntent(question: string): QueryIntent {
 
   // 2. Sub-entity extraction
   let subEntity: string | null = null;
-  if (/\bsibling|\bbrother|\bsister\b/.test(q)) subEntity = "sibling";
-  else if (/\bcap\b|\barmed personnel|\barmy|\bdefence\b/.test(q)) subEntity = "cap";
-  else if (/\bsport|\bsports quota|\bathletics\b/.test(q)) subEntity = "sports";
-  else if (/\bsc\s*\/\s*st|\bsc\b|\bst\b/.test(q)) subEntity = "sc_st";
-  else if (/\balumni\b/.test(q)) subEntity = "alumni";
-  else if (/\bphd|\bhtra\b|\bresearch scholar\b/.test(q)) subEntity = "phd";
-  else if (/\bmedical|\bhealth|\bsick\b/.test(q)) subEntity = "medical";
-  else if (/\bweekday|\bweekend\b/.test(q)) subEntity = "timing";
+  if (/\b(backlog|backlogs|bavklog|bavklogs|arrear|arrears|failed|fail|fails)\b/.test(q)) subEntity = "backlog";
+  else if (/\b(sibling|brother|sister)\b/.test(q)) subEntity = "sibling";
+  else if (/\b(cap|armed personnel|defence|army)\b/.test(q)) subEntity = "cap";
+  else if (/\b(sport|sports|sports quota|athletics)\b/.test(q)) subEntity = "sports";
+  else if (/\b(sc\s*\/\s*st|sc|st)\b/.test(q)) subEntity = "sc_st";
+  else if (/\b(alumni)\b/.test(q)) subEntity = "alumni";
+  else if (/\b(casual leave|cl\b)\b/.test(q)) subEntity = "casual_leave";
+  else if (/\b(probation|probationary)\b/.test(q)) subEntity = "probation";
+  else if (/\b(maternity|pregnancy)\b/.test(q)) subEntity = "maternity";
+  else if (/\b(paternity)\b/.test(q)) subEntity = "paternity";
+  else if (/\b(od\b|on duty|on-duty|academic leave)\b/.test(q)) subEntity = "od_leave";
+  else if (/\b(phd|htra|research scholar)\b/.test(q)) subEntity = "phd";
+  else if (/\b(medical|health|sick)\b/.test(q)) subEntity = "medical";
+  else if (/\b(weekday|weekend)\b/.test(q)) subEntity = "timing";
 
   // 3. Intent Type
   let intentType: QueryIntent["intentType"] = "general_summary";
-  if (/\b(minimum|needed|required|score|percentage|cgpa|gpa|marks|cutoff|threshold)\b/.test(q)) {
+  if (/\b(minimum|needed|required|score|percentage|cgpa|gpa|marks|cutoff|threshold|how many)\b/.test(q)) {
     intentType = "cgpa_percentage";
   } else if (/\b(how much|amount|concession|discount|percent|percentage of fee|ratio|share)\b/.test(q)) {
     intentType = "amount_concession";
-  } else if (/\b(who can|who is|eligible|eligibility|can i|apply)\b/.test(q)) {
+  } else if (/\b(who can|who is|eligible|eligibility|can i|can faculty|can students|does students|do students|apply)\b/.test(q)) {
     intentType = "eligibility";
-  } else if (/\b(rule|rules|condition|conditions|criteria|maintain|continue|continuation)\b/.test(q)) {
+  } else if (/\b(rule|rules|condition|conditions|criteria|maintain|continue|continuation|backlog)\b/.test(q)) {
     intentType = "conditions_rules";
   } else if (/\b(how to|procedure|process|where to|documents|apply|form)\b/.test(q)) {
     intentType = "process_apply";
@@ -105,8 +112,22 @@ export function synthesizeFriendlyAnswer(
 
   // --- TOPIC: SCHOLARSHIP ---
   if (intent.topic === "scholarship") {
+    // Backlog condition (MUST take precedence over sibling)
+    if (
+      intent.subEntity === "backlog" ||
+      question.toLowerCase().includes("backlog") ||
+      question.toLowerCase().includes("bavklog") ||
+      question.toLowerCase().includes("arrear")
+    ) {
+      return (
+        `No, students with backlogs are not eligible to receive or continue the scholarship under Vignan University's Scholarship Policy. ` +
+        `To maintain or continue the scholarship, students must pass all registered subjects in the first attempt and secure a minimum of 70% in the preceding academic year without any active backlogs.` +
+        circularNote
+      );
+    }
+
     // Sibling scholarship
-    if (intent.subEntity === "sibling" || rawText.toLowerCase().includes("sibling")) {
+    if (intent.subEntity === "sibling" || (rawText.toLowerCase().includes("sibling") && !rawText.toLowerCase().includes("continuation"))) {
       if (intent.subEntity === "sibling" || question.toLowerCase().includes("sibling")) {
         return (
           `Students with siblings studying in Vignan institutions can receive a 10% tuition-fee scholarship. ` +
@@ -129,7 +150,7 @@ export function synthesizeFriendlyAnswer(
       question.toLowerCase().includes("maintain") ||
       question.toLowerCase().includes("need")
     ) {
-      if (rawText.includes("70%") || rawText.includes("first attempt") || rawText.includes("Continuation")) {
+      if (rawText.includes("70%") || rawText.includes("first attempt") || rawText.includes("Continuation") || rawText.includes("Academic Criteria")) {
         return (
           `Students need at least 70% in the preceding year without any backlogs to maintain and continue their scholarship. ` +
           `You must also pass all subjects in the first attempt, clear all fee dues, and maintain good conduct. ` +
@@ -140,7 +161,7 @@ export function synthesizeFriendlyAnswer(
     }
 
     // Who is eligible / general scholarship
-    if (intent.intentType === "eligibility" || question.toLowerCase().includes("who can")) {
+    if (intent.intentType === "eligibility" || question.toLowerCase().includes("who can") || question.toLowerCase().includes("can students")) {
       return (
         `Students who meet the eligibility conditions mentioned in Vignan's Scholarship Policy can receive a scholarship. ` +
         `The university offers several categories including academic merit, siblings (10%), sports quota (up to 75%), SC/ST (25%), alumni (10%), and staff wards (20%). ` +
@@ -196,9 +217,42 @@ export function synthesizeFriendlyAnswer(
 
   // --- TOPIC: LEAVE / FACULTY LEAVE ---
   if (intent.topic === "leave" || question.toLowerCase().includes("leave")) {
+    if (intent.subEntity === "casual_leave" || question.toLowerCase().includes("casual")) {
+      return (
+        `Regular full-time faculty members are entitled to 15 days of Casual Leave (CL) per calendar year under Vignan University's Service Rules. ` +
+        `Casual leave must be applied for and sanctioned by the Head of Department (HOD) in advance.` +
+        circularNote
+      );
+    }
+    if (intent.subEntity === "probation" || question.toLowerCase().includes("probation")) {
+      return (
+        `Faculty members serving their probation period are eligible for Casual Leave on a pro-rata basis (1.25 days per completed month of service) under Vignan University's Service Rules. ` +
+        `However, long-term leaves such as study leave or sabbatical leave are not admissible during the probation period.` +
+        circularNote
+      );
+    }
+    if (intent.subEntity === "maternity" || question.toLowerCase().includes("maternity")) {
+      return (
+        `Female faculty members with at least one year of continuous service are entitled to 180 days (6 months) of paid maternity leave for up to two surviving children under Vignan University's Service Rules.` +
+        circularNote
+      );
+    }
+    if (intent.subEntity === "paternity" || question.toLowerCase().includes("paternity")) {
+      return (
+        `Male employees are entitled to 15 days of paid paternity leave during the confinement of their spouse or within 6 months of childbirth for up to two surviving children under Vignan University's policy.` +
+        circularNote
+      );
+    }
+    if (intent.subEntity === "od_leave" || question.toLowerCase().includes("on duty") || question.toLowerCase().includes("od")) {
+      return (
+        `Faculty members are eligible for up to 15 days of On-Duty (OD) leave per calendar year to attend national and international conferences, workshops, FDPs, symposia, and examination duties.` +
+        circularNote
+      );
+    }
+
     return (
       `Faculty leave is governed by Vignan University's applicable service and leave rules. ` +
-      `The specific leave entitlement depends on the type of leave, such as casual leave, academic on-duty (OD) leave, or maternity and paternity leave. ` +
+      `Regular faculty are entitled to 15 days of Casual Leave, 15 days of On-Duty leave, and applicable maternity/paternity leave. ` +
       `See the relevant clause below for the exact entitlement and application procedure.` +
       circularNote
     );

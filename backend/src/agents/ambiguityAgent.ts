@@ -30,7 +30,7 @@ export function runAmbiguityAgent(question: string): AmbiguityResult {
 
   if (
     (/\beligib/.test(q) || /\bcan i (write|appear|sit)\b/.test(q)) &&
-    !/\battendance\b|\bexam\b|\bscholarship\b|\badmission\b/.test(q)
+    !/\battendance\b|\bexam\b|\bscholarship\b|\badmission\b|\bleave\b|\bcasual\b|\bmaternity\b|\bpaternity\b|\bhostel\b|\bdegree\b|\bcredit\b|\bpromotion\b/.test(q)
   ) {
     return clarify("Which eligibility are you asking about?", [
       { id: "attendance_eligibility", label: "Attendance / exam eligibility" },
@@ -67,7 +67,7 @@ export function runAmbiguityAgent(question: string): AmbiguityResult {
   // Bare leave without type
   const leaveish = /\b(leave|leaves)\b/.test(q);
   const leaveSpecific =
-    /\b(casual|medical|sick|od|on[\s-]?duty|maternity|earned|emergency|days?)\b/.test(q);
+    /\b(casual|medical|sick|od|on[\s-]?duty|maternity|paternity|probation|earned|emergency|sabbatical|study|days?)\b/.test(q);
   if (leaveish && !leaveSpecific) {
     return clarify("What type of leave?", [
       { id: "casual_leave", label: "Casual leave" },

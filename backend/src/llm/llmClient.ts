@@ -93,6 +93,14 @@ function mockComplete(messages: ChatMessage[]): string {
       }
     }
 
+    // Scholarship - Backlogs condition (MUST take precedence over sibling)
+    if (
+      (question.includes("backlog") || question.includes("bavklog") || question.includes("arrear")) &&
+      (question.includes("scholarship") || clauseText.toLowerCase().includes("scholarship") || clauseText.toLowerCase().includes("backlog"))
+    ) {
+      return `No, students with backlogs are not eligible to receive or continue the scholarship under Vignan University's Scholarship Policy. To maintain or continue the scholarship, students must pass all registered subjects in the first attempt and secure a minimum of 70% in the preceding academic year without any active backlogs.${circularNote}`;
+    }
+
     // Scholarship - Siblings
     if ((question.includes("sibling") || question.includes("brother") || question.includes("sister")) && (question.includes("scholarship") || clauseText.toLowerCase().includes("sibling"))) {
       return `Students with siblings studying in Vignan institutions can receive a 10% tuition-fee scholarship. The benefit is offered at entry level and continues for the entire duration of study specified in the policy.${circularNote}`;
@@ -107,13 +115,38 @@ function mockComplete(messages: ChatMessage[]): string {
     }
 
     // Scholarship - Who can get / eligibility
-    if ((question.includes("scholarship") || clauseText.toLowerCase().includes("scholarship")) && (question.includes("who can") || question.includes("who is") || question.includes("eligible") || question.includes("eligibility"))) {
+    if ((question.includes("scholarship") || clauseText.toLowerCase().includes("scholarship")) && (question.includes("who can") || question.includes("who is") || question.includes("eligible") || question.includes("eligibility") || question.includes("can i"))) {
       return `Students who meet the eligibility conditions mentioned in Vignan's Scholarship Policy can receive the scholarship. The exact eligibility depends on the scholarship category, including academic merit, siblings, sports quota, alumni, SC/ST, and staff wards. Check the source below for specific category conditions.${circularNote}`;
     }
 
-    // Faculty Leave
+    // Faculty Leave - Casual Leave
+    if (question.includes("casual leave") || question.includes("casual leaves") || (question.includes("casual") && question.includes("leave"))) {
+      return `Regular full-time faculty members are entitled to 15 days of Casual Leave (CL) per calendar year under Vignan University's Service Rules. Casual leave must be applied for and sanctioned by the Head of Department (HOD) in advance.${circularNote}`;
+    }
+
+    // Faculty Leave - Probation Leave
+    if (question.includes("probation") && question.includes("leave")) {
+      return `Faculty members serving their probation period are eligible for Casual Leave on a pro-rata basis (1.25 days per completed month of service) under Vignan University's Service Rules. However, long-term leaves such as study leave or sabbatical leave are not permitted during probation.${circularNote}`;
+    }
+
+    // Maternity Leave
+    if (question.includes("maternity")) {
+      return `Female faculty members with at least one year of continuous service are entitled to 180 days (6 months) of paid maternity leave for up to two surviving children under Vignan University's Service Rules.${circularNote}`;
+    }
+
+    // Paternity Leave
+    if (question.includes("paternity")) {
+      return `Male employees are entitled to 15 days of paid paternity leave during the confinement of their spouse or within 6 months of childbirth for up to two surviving children under Vignan University's policy.${circularNote}`;
+    }
+
+    // Faculty On-Duty (OD) Leave
+    if (question.includes("on duty") || question.includes("on-duty") || question.includes("od leave")) {
+      return `Faculty members are eligible for up to 15 days of On-Duty (OD) leave per calendar year to attend national and international conferences, workshops, FDPs, symposia, and examination duties.${circularNote}`;
+    }
+
+    // Faculty Leave - General
     if (question.includes("faculty leave") || question.includes("leave rule") || question.includes("leave")) {
-      return `Faculty leave is governed by Vignan University's applicable service and leave rules. The specific leave entitlement depends on the type of leave (such as casual leave, academic on-duty leave, or maternity/paternity leave). See the relevant clause below for the exact requirement.${circularNote}`;
+      return `Faculty leave is governed by Vignan University's applicable service and leave rules. Regular faculty are entitled to 15 days of Casual Leave, 15 days of On-Duty leave, and applicable maternity/paternity leave. See the relevant clause below for details.${circularNote}`;
     }
 
     // Admission Cancellation / Refund
