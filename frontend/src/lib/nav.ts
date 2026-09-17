@@ -33,6 +33,7 @@ export function navForRole(role: Role): NavItem[] {
     case "super_admin":
       return [
         { label: "Dashboard", to: "/app/dashboard", icon: "dashboard" },
+        { label: "Ask Agent", to: "/app/chat", icon: "chat" },
         { label: "Upload", to: "/app/admin/upload", icon: "upload" },
         { label: "Manage policies", to: "/app/admin/manage", icon: "manage" },
         { label: "Review", to: "/app/admin/review", icon: "review" },

@@ -15,16 +15,16 @@ export const NOT_FOUND_MESSAGE =
   "I could not find sufficient information about this topic in the currently indexed Vignan University policy documents.\n\nPlease try another policy-related question or contact the concerned university department.";
 
 const OTHER_UNIVERSITIES_RE =
-  /\b(iit(?:\s+[a-z]+)?|nit(?:\s+[a-z]+)?|iiit(?:\s+[a-z]+)?|jntu[a-z]*|anna\s+university|delhi\s+university|\bdu\b|oxford|harvard|stanford|\bmit\b|cambridge|caltech|iisc|iim|bits(?:\s+pilani)?|vit\s+vellore|srm(?:\s+university)?|amrita|gitam|andhra\s+university|svu|another\s+university|other\s+universit(?:y|ies)|best\s+university\s+in\s+india)\b/i;
+  /\b(klu|k\s*l\s*u|kl\s+university|kl\s+deemed|koneru\s+lakshmaiah|klef|vit(?:\s+ap|\s+vellore|\s+chennai|\s+bhopal|\s+university)?|srm(?:\s+ap|\s+ist|\s+university|\s+ktr)?|amrita(?:\s+university|\s+vishwa\s+vidyapeetham)?|gitam(?:\s+university)?|iit(?:\s+[a-z]+)?|nit(?:\s+[a-z]+)?|iiit(?:\s+[a-z]+)?|iim(?:\s+[a-z]+)?|iisc|aiims|niper|iiser|niser|bits(?:\s+pilani|\s+hyderabad|\s+goa)?|jntu[a-z0-9\-]*|andhra\s+university|\bau\b|svu|sri\s+venkateswara\s+university|acharya\s+nagarjuna|anu|osmania(?:\s+university)?|\bou\b|kakatiya|rgukt|gvp|gayatri\s+vidya\s+parishad|vrsec|rvr\s*(?:&|and)?\s*jc|rvrjc|bapatla|bec|pvpsit|siddhartha\s+engineering|vvit|vasireddy|cbit|vasavi|vnr|griet|mgit|snist|bvrit|vardhaman|anurag|malla\s+reddy|manipal|mahe|thapar|lpu|lovely\s+professional|chandigarh\s+university|amity|sharda|galgotias|bennett|shiv\s+nadar|ashoka|symbiosis|nmims|christ\s+university|jain\s+university|pes\s+university|rvce|msrit|bmsce|\bbms\b|sastra|sathyabama|vel\s+tech|bharath\s+university|saveetha|kalasalingam|karunya|anna\s+university|psg\s+tech|ssn|delhi\s+university|\bdu\b|jnu|jamia|bhu|amu|calcutta\s+university|mumbai\s+university|pune\s+university|sppu|oxford|harvard|stanford|\bmit\b|cambridge|caltech|princeton|yale|columbia|berkeley|cmu|other\s+colleges?|another\s+college|other\s+universit(?:y|ies)|another\s+universit(?:y|ies)|different\s+colleges?|different\s+universit(?:y|ies)|non[- ]vignan|outside\s+vignan|any\s+other\s+college|any\s+other\s+university|colleges?\s+in\s+[a-z]+)\b/i;
 
 const POLITICS_AND_WORLD_KNOWLEDGE_RE =
-  /\b(prime\s+minister|chief\s+minister|president\s+of\s+(?:india|usa|america)|narendra\s+modi|capital\s+of\s+[a-z]+|who\s+is\s+the\s+(?:pm|president|cm|governor|king|queen)|world\s+cup|cricket\s+score|currency\s+of|stock\s+price|movie\s+rating|box\s+office)\b/i;
+  /\b(prime\s+minister|chief\s+minister|president\s+of|narendra\s+modi|who\s+is\s+(?:the\s+)?(?:pm|president|cm|governor|king|queen|ceo|founder|elon\s+musk|trump|biden)|capital\s+of|world\s+cup|cricket|ipl|football|currency\s+of|stock\s+price|movie|song|actor|actress|box\s+office|celebrity|news|history\s+of\s+[a-z]+|who\s+won)\b/i;
 
 const PROGRAMMING_AND_TECH_TUTORIAL_RE =
-  /\b(write\s+(?:a\s+)?(?:python|java|javascript|typescript|c\+\+|c#|\bc\b|html|css|sql|ruby|go|rust|php|react|node)?\s*(?:program|code|script|function|class|algorithm|method|query)|explain\s+machine\s+learning|what\s+is\s+machine\s+learning|explain\s+deep\s+learning|how\s+to\s+code|fix\s+(?:this\s+)?code|debug\s+(?:this\s+)?code|solve\s+(?:this\s+)?equation|write\s+a\s+binary\s+search)\b/i;
+  /\b(write\s+(?:a\s+)?(?:python|java|javascript|typescript|c\+\+|c#|\bc\b|html|css|sql|ruby|go|rust|php|react|node)?\s*(?:program|code|script|function|class|algorithm|method|query|app)|explain\s+(?:machine\s+learning|deep\s+learning|ai|react|javascript|python|java|oops|dsa|sql)|how\s+to\s+code|fix\s+(?:this\s+)?code|debug\s+(?:this\s+)?code|solve\s+(?:this\s+)?(?:equation|math|puzzle)|write\s+(?:a\s+)?(?:binary\s+search|sorting|loop|api))\b/i;
 
 const GENERAL_TRIVIA_LIFESTYLE_RE =
-  /\b(weather\s+today|today'?s\s+weather|weather\s+in\s+[a-z]+|temperature\s+today|recipe\s+for|how\s+to\s+cook|make\s+a\s+cake|tell\s+me\s+a\s+joke|write\s+a\s+poem|write\s+a\s+song|sing\s+a\s+song|translate\s+(?:this\s+)?to\s+[a-z]+|horoscope|astrology|flight\s+ticket)\b/i;
+  /\b(weather|temperature|forecast|recipe|how\s+to\s+cook|make\s+a\s+cake|bake|restaurant|tell\s+me\s+a\s+joke|write\s+a\s+poem|sing\s+a\s+song|translate|horoscope|astrology|flight\s+ticket|train\s+ticket|hotel\s+booking|medical\s+advice|symptoms\s+of|treatment\s+for|fitness\s+routine|workout|diet\s+plan)\b/i;
 
 /**
  * Validates whether the question is strictly within Vignan University policy scope.
@@ -42,8 +42,8 @@ export function checkPolicyScope(question: string): ScopeCheckResult {
     };
   }
 
-  // 1. Check for other universities/competitors
-  if (OTHER_UNIVERSITIES_RE.test(q) && !q.includes("vignan") && !q.includes("vfstr")) {
+  // 1. Check for other universities/competitors (Strictly block any other institution)
+  if (OTHER_UNIVERSITIES_RE.test(q)) {
     return {
       in_scope: false,
       is_out_of_scope: true,

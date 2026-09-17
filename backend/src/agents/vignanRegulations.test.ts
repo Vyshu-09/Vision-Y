@@ -784,7 +784,23 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
     assert.ok(r26Source, "Must cite R26 regulation as source");
   });
 
-  it("15. Scope Enforcement: rejects questions about other universities (IIT / JNTU)", async () => {
+  it("15. Scope Enforcement: rejects questions about other universities (KLU / IIT / JNTU / VIT / SRM)", async () => {
+    const kluRes = await runPolicyPipeline({
+      question: "What is KLU refund policy?",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(kluRes.is_out_of_scope, true, "Must flag KLU as out of scope");
+    assert.ok(kluRes.answer_text.includes("Outside Policy Scope"), "Must display Outside Policy Scope warning");
+    assert.equal(kluRes.sources.length, 0, "No sources on out of scope query");
+
+    const klUnivRes = await runPolicyPipeline({
+      question: "Tell me about KL University attendance rules",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(klUnivRes.is_out_of_scope, true, "Must flag KL University as out of scope");
+
     const iitRes = await runPolicyPipeline({
       question: "What is IIT Bombay's admission policy?",
       role: "student",

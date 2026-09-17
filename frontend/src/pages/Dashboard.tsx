@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import {
@@ -8,9 +8,52 @@ import {
   policyCategoryBars,
   policyStatusSlices,
 } from "../components/DashboardCharts";
-import { FOCUS_AREAS, ROLE_THEME, SUGGESTIONS } from "../lib/nav";
+import { FOCUS_AREAS, ROLE_THEME } from "../lib/nav";
 import type { Circular, PolicyRow, QueryRecord, Role } from "../types";
 import { AdminPage } from "./Admin";
+
+function CommonPolicySearchBar({ accent }: { accent: string }) {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const query = q.trim();
+    if (!query) return;
+    navigate("/app/chat", { state: { question: query } });
+  }
+
+  return (
+    <section className="rounded-2xl border border-line bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">🤖</span>
+        <div>
+          <h2 className="font-display text-xl text-navy">Ask Vignan Policy Agent</h2>
+          <p className="text-xs text-muted">
+            Ask any question regarding official Vignan University policies, regulations, and rules.
+          </p>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Ask a Vignan policy-related question..."
+          className="flex-1 rounded-xl border border-line px-4 py-3 text-sm text-navy placeholder:text-muted focus:border-action focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={!q.trim()}
+          className="inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold text-white transition disabled:opacity-50"
+          style={{ background: accent }}
+        >
+          🔍 Search Policy
+        </button>
+      </form>
+    </section>
+  );
+}
 
 function QuickLink({
   to,
@@ -135,7 +178,6 @@ function StudentBody({
   policies,
   circulars,
   queries,
-  suggestions,
   focus,
   accent,
   unread,
@@ -143,13 +185,14 @@ function StudentBody({
   policies: PolicyRow[];
   circulars: Circular[];
   queries: QueryRecord[];
-  suggestions: string[];
   focus: string[];
   accent: string;
   unread: number;
 }) {
   return (
     <>
+      <CommonPolicySearchBar accent={accent} />
+
       <section className="grid gap-3 sm:grid-cols-3">
         <QuickLink to="/app/chat" title="Ask Agent" subtitle="Get a cited answer in seconds" accent={accent} />
         <QuickLink to="/app/notifications" title="Alerts" subtitle="Policy updates for students" accent={accent} />
@@ -170,23 +213,6 @@ function StudentBody({
           { label: "My questions", value: queries.length },
         ]}
       />
-
-      <section className="rounded-2xl border border-line bg-white p-5">
-        <h2 className="font-display text-xl text-navy">Ask next</h2>
-        <p className="mt-1 text-sm text-muted">Common student questions powered by Agent 53.</p>
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
-          {suggestions.map((q) => (
-            <Link
-              key={q}
-              to="/app/chat"
-              state={{ question: q }}
-              className="rounded-xl border border-line px-4 py-3 text-sm font-medium text-navy transition hover:border-action hover:bg-canvas"
-            >
-              {q}
-            </Link>
-          ))}
-        </div>
-      </section>
 
       <div className="grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-line bg-white p-5">
@@ -242,7 +268,6 @@ function StudentBody({
 function FacultyBody({
   policies,
   circulars,
-  suggestions,
   focus,
   accent,
   unread,
@@ -250,7 +275,6 @@ function FacultyBody({
 }: {
   policies: PolicyRow[];
   circulars: Circular[];
-  suggestions: string[];
   focus: string[];
   accent: string;
   unread: number;
@@ -265,6 +289,8 @@ function FacultyBody({
 
   return (
     <>
+      <CommonPolicySearchBar accent={accent} />
+
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {[
           { t: "Ask Policy AI", s: "Cited academic answers", to: "/app/chat" },
@@ -306,19 +332,6 @@ function FacultyBody({
               </span>
             ))}
           </div>
-          <h3 className="mt-6 text-sm font-bold uppercase tracking-wide text-muted">Try asking</h3>
-          <div className="mt-3 space-y-2">
-            {suggestions.map((q) => (
-              <Link
-                key={q}
-                to="/app/chat"
-                state={{ question: q }}
-                className="block rounded-xl border border-line px-4 py-3 text-sm font-medium text-navy hover:bg-canvas"
-              >
-                {q}
-              </Link>
-            ))}
-          </div>
         </section>
 
         <section className="rounded-2xl border border-line bg-white p-5">
@@ -344,7 +357,6 @@ function FacultyBody({
 function StaffBody({
   policies,
   circulars,
-  suggestions,
   focus,
   accent,
   active,
@@ -353,7 +365,6 @@ function StaffBody({
 }: {
   policies: PolicyRow[];
   circulars: Circular[];
-  suggestions: string[];
   focus: string[];
   accent: string;
   active: number;
@@ -370,6 +381,8 @@ function StaffBody({
 
   return (
     <>
+      <CommonPolicySearchBar accent={accent} />
+
       <section className="grid gap-4 sm:grid-cols-3">
         <div className="rounded-2xl border border-line bg-white p-5">
           <p className="text-xs font-semibold uppercase tracking-wide text-muted">Active policies</p>
@@ -420,19 +433,6 @@ function StaffBody({
               >
                 {f}
               </span>
-            ))}
-          </div>
-          <h3 className="mt-6 text-sm font-bold uppercase tracking-wide text-muted">Suggested ops questions</h3>
-          <div className="mt-3 space-y-2">
-            {suggestions.slice(0, 3).map((q) => (
-              <Link
-                key={q}
-                to="/app/chat"
-                state={{ question: q }}
-                className="block rounded-xl border border-line px-3 py-2.5 text-sm font-medium text-navy hover:bg-canvas"
-              >
-                {q}
-              </Link>
             ))}
           </div>
         </section>
@@ -515,7 +515,6 @@ export function DashboardPage() {
         policies={policies}
         circulars={circulars}
         queries={queries}
-        suggestions={SUGGESTIONS.student}
         focus={FOCUS_AREAS.student}
         accent={theme.accent}
         unread={unread}
@@ -526,7 +525,6 @@ export function DashboardPage() {
       <FacultyBody
         policies={policies}
         circulars={circulars}
-        suggestions={SUGGESTIONS.faculty}
         focus={FOCUS_AREAS.faculty}
         accent={theme.accent}
         unread={unread}
@@ -538,7 +536,6 @@ export function DashboardPage() {
       <StaffBody
         policies={policies}
         circulars={circulars}
-        suggestions={SUGGESTIONS.staff}
         focus={FOCUS_AREAS.staff}
         accent={theme.accent}
         active={active}

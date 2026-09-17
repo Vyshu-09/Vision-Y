@@ -1,8 +1,50 @@
 import { useEffect, useState, type FormEvent, type ReactNode } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { api } from "../api/client";
 import { DashboardInsights } from "../components/DashboardCharts";
 import type { ClarificationTicket, PolicyRow, ReviewQueue } from "../types";
+
+function AdminSearchBar() {
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
+
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const query = q.trim();
+    if (!query) return;
+    navigate("/app/chat", { state: { question: query } });
+  }
+
+  return (
+    <section className="mb-6 rounded-2xl border border-line bg-white p-5 shadow-sm">
+      <div className="flex items-center gap-3">
+        <span className="text-2xl">🤖</span>
+        <div>
+          <h2 className="font-display text-xl text-navy">Ask Vignan Policy Agent</h2>
+          <p className="text-xs text-muted">
+            Ask any question regarding official Vignan University policies, regulations, and rules.
+          </p>
+        </div>
+      </div>
+      <form onSubmit={handleSubmit} className="mt-4 flex flex-col gap-2 sm:flex-row">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="Ask a Vignan policy-related question..."
+          className="flex-1 rounded-xl border border-line px-4 py-3 text-sm text-navy placeholder:text-muted focus:border-action focus:outline-none"
+        />
+        <button
+          type="submit"
+          disabled={!q.trim()}
+          className="inline-flex items-center justify-center rounded-xl bg-action px-5 py-3 text-sm font-semibold text-white transition hover:bg-action-hover disabled:opacity-50"
+        >
+          🔍 Search Policy
+        </button>
+      </form>
+    </section>
+  );
+}
 
 export type AdminSection =
   | "overview"
@@ -207,6 +249,7 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
 
       {section === "overview" && (
         <>
+          <AdminSearchBar />
           <DashboardInsights
             title="Governance insights"
             subtitle="Open a sidebar item to work on one queue at a time."
