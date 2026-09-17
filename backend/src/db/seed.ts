@@ -1,8 +1,7 @@
 import bcrypt from "bcryptjs";
-import { embedText } from "../embeddings/embedder.js";
 import { cloudMedia } from "../media/cloudMedia.js";
 import { store } from "./store.js";
-import type { Policy, PolicyClause, Role, User } from "../types.js";
+import type { User } from "../types.js";
 
 function user(
   partial: Omit<User, "id" | "password_hash" | "avatar_url" | "designation" | "employee_id" | "phone"> & {
@@ -11,6 +10,10 @@ function user(
     designation?: string | null;
     employee_id?: string | null;
     phone?: string | null;
+    admission_year?: number | null;
+    program?: string | null;
+    regulation?: string | null;
+    batch?: string | null;
   },
 ): User {
   return {
@@ -24,39 +27,10 @@ function user(
     designation: partial.designation ?? null,
     employee_id: partial.employee_id ?? null,
     phone: partial.phone ?? null,
-  };
-}
-
-function policy(
-  p: Omit<Policy, "id" | "uploaded_at" | "audience" | "supersedes_id"> & {
-    audience?: Role[];
-    supersedes_id?: string | null;
-  },
-): Policy {
-  return {
-    ...p,
-    id: store.newId(),
-    uploaded_at: store.now(),
-    audience: p.audience ?? ["student", "faculty", "staff", "super_admin"],
-    supersedes_id: p.supersedes_id ?? null,
-  };
-}
-
-function clause(
-  policyId: string,
-  clause_number: string,
-  clause_text: string,
-  section = "General",
-  page_number: number | null = null,
-): PolicyClause {
-  return {
-    id: store.newId(),
-    policy_id: policyId,
-    clause_number,
-    clause_text,
-    section,
-    page_number,
-    embedding_vector: embedText(`${section} ${clause_number} ${clause_text}`),
+    admission_year: partial.admission_year ?? null,
+    program: partial.program ?? null,
+    regulation: partial.regulation ?? null,
+    batch: partial.batch ?? null,
   };
 }
 
@@ -71,6 +45,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/asha.png",
       employee_id: "STU1001",
       phone: "9001001001",
+      program: "B.Tech",
+      admission_year: 2026,
+      regulation: "R26",
+      batch: "2026",
     },
     {
       name: "Rahul Sharma",
@@ -79,6 +57,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/rahul.png",
       employee_id: "STU1002",
       phone: "9001001002",
+      program: "B.Tech",
+      admission_year: 2025,
+      regulation: "R25",
+      batch: "2025",
     },
     {
       name: "Sneha Reddy",
@@ -87,6 +69,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/sneha.png",
       employee_id: "STU1003",
       phone: "9001001003",
+      program: "B.Tech",
+      admission_year: 2022,
+      regulation: "R22",
+      batch: "2022",
     },
     {
       name: "Arjun Nair",
@@ -95,6 +81,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/arjun.png",
       employee_id: "STU1004",
       phone: "9001001004",
+      program: "B.Tech",
+      admission_year: 2022,
+      regulation: "R22",
+      batch: "2022",
     },
     {
       name: "Meera Krishnan",
@@ -103,6 +93,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/meera.png",
       employee_id: "STU1005",
       phone: "9001001005",
+      program: "B.Tech",
+      admission_year: 2023,
+      regulation: "R22.1",
+      batch: "2023",
     },
     {
       name: "Vikram Singh",
@@ -111,6 +105,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/vikram.png",
       employee_id: "STU1006",
       phone: "9001001006",
+      program: "B.Tech",
+      admission_year: 2025,
+      regulation: "R25",
+      batch: "2025",
     },
     {
       name: "Ananya Gupta",
@@ -119,6 +117,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/ananya.png",
       employee_id: "STU1007",
       phone: "9001001007",
+      program: "B.Tech",
+      admission_year: 2026,
+      regulation: "R26",
+      batch: "2026",
     },
     {
       name: "Karthik Rao",
@@ -127,6 +129,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/karthik.png",
       employee_id: "STU1008",
       phone: "9001001008",
+      program: "B.Tech",
+      admission_year: 2022,
+      regulation: "R22",
+      batch: "2022",
     },
     {
       name: "Divya Iyer",
@@ -135,6 +141,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/divya.png",
       employee_id: "STU1009",
       phone: "9001001009",
+      program: "B.Tech",
+      admission_year: 2025,
+      regulation: "R25",
+      batch: "2025",
     },
     {
       name: "Nikhil Joshi",
@@ -143,6 +153,10 @@ export function seedDemoData(): void {
       avatar_url: "/images/avatars/students/nikhil.png",
       employee_id: "STU1010",
       phone: "9001001010",
+      program: "B.Tech",
+      admission_year: 2026,
+      regulation: "R26",
+      batch: "2026",
     },
   ];
 
@@ -406,352 +420,17 @@ export function seedDemoData(): void {
   });
   store.insertUser(admin);
 
-  // Demo chain: Attendance Policy 2024 (superseded) → Attendance Policy 2025 (CURRENT)
-  const attendance2024 = policy({
-    title: "Attendance Policy",
-    category: "Attendance",
-    version_year: 2024,
-    effective_date: "2024-07-01",
-    status: "superseded",
-    source_file_url: "seed://attendance-2024",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["student", "faculty", "staff", "super_admin"],
-  });
-  const attendance2025 = policy({
-    title: "Attendance Policy",
-    category: "Attendance",
-    version_year: 2025,
-    effective_date: "2025-07-01",
-    status: "active",
-    source_file_url: "seed://attendance-2025",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["student", "faculty", "staff", "super_admin"],
-    supersedes_id: attendance2024.id,
-  });
-  const cseLab = policy({
-    title: "CSE Department Lab Attendance Rules",
-    category: "Attendance",
-    version_year: 2025,
-    effective_date: "2025-08-01",
-    status: "active",
-    source_file_url: "seed://cse-lab-2025",
-    uploaded_by: admin.id,
-    authority_level: "department",
-    department: "CSE",
-    audience: ["student", "faculty", "super_admin"],
-  });
-  const examPolicy = policy({
-    title: "University Examination Regulations",
-    category: "Examinations",
-    version_year: 2024,
-    effective_date: "2024-06-15",
-    status: "active",
-    source_file_url: "seed://exam-2024",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["student", "faculty", "staff", "super_admin"],
-  });
-  const reval = policy({
-    title: "Revaluation Policy",
-    category: "Examinations",
-    version_year: 2025,
-    effective_date: "2025-01-10",
-    status: "active",
-    source_file_url: "seed://reval-2025",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["student", "faculty", "super_admin"],
-  });
-  const hostel = policy({
-    title: "Hostel Rules and Regulations",
-    category: "Hostel",
-    version_year: 2024,
-    effective_date: "2024-07-01",
-    status: "active",
-    source_file_url: "seed://hostel-2024",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["student", "staff", "super_admin"],
-  });
-  const fee = policy({
-    title: "Fee Payment and Refund Policy",
-    category: "Fees",
-    version_year: 2025,
-    effective_date: "2025-04-01",
-    status: "active",
-    source_file_url: "seed://fees-2025",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["student", "staff", "super_admin"],
-  });
-  const facultyPol = policy({
-    title: "Faculty Workload and Leave Regulations",
-    category: "Faculty",
-    version_year: 2024,
-    effective_date: "2024-06-01",
-    status: "active",
-    source_file_url: "seed://faculty-2024",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["faculty", "super_admin"],
-  });
-  const hrPol = policy({
-    title: "Staff HR and Service Regulations",
-    category: "HR",
-    version_year: 2024,
-    effective_date: "2024-05-01",
-    status: "active",
-    source_file_url: "seed://hr-2024",
-    uploaded_by: admin.id,
-    authority_level: "university",
-    department: null,
-    audience: ["staff", "super_admin"],
-  });
-
-  for (const p of [
-    attendance2024,
-    attendance2025,
-    cseLab,
-    examPolicy,
-    reval,
-    hostel,
-    fee,
-    facultyPol,
-    hrPol,
-  ]) {
-    store.insertPolicy(p);
-  }
-
-  const clauses: PolicyClause[] = [
-    clause(
-      attendance2025.id,
-      "3.1",
-      "A student shall maintain a minimum of 75% attendance in each course in a semester to be eligible to appear for the end-semester examination.",
-      "Attendance",
-      12,
-    ),
-    clause(
-      attendance2025.id,
-      "3.2",
-      "Condonation of shortage of attendance: The Dean of the School may condone shortage of attendance up to 10% (i.e. attendance not below 65%) on medical grounds or other genuine reasons, provided the student submits supporting documents within 7 working days of returning to class and pays the prescribed condonation fee.",
-      "Attendance",
-      13,
-    ),
-    clause(
-      attendance2025.id,
-      "3.3",
-      "The condonation fee is Rs. 500 per course. Condonation shall not be granted more than once in a programme except with Vice-Chancellor approval.",
-      "Attendance",
-      13,
-    ),
-    clause(
-      attendance2025.id,
-      "3.4",
-      "Students with attendance below 65% shall not be eligible for condonation and must repeat the course.",
-      "Attendance",
-      14,
-    ),
-    clause(
-      attendance2024.id,
-      "3.1",
-      "A student shall maintain a minimum of 80% attendance in each course to be eligible for the end-semester examination. Condonation up to 5% may be granted by the Principal.",
-      "Attendance",
-      10,
-    ),
-    clause(
-      cseLab.id,
-      "2.1",
-      "For laboratory courses in the CSE department, a student shall maintain a minimum of 80% attendance. Shortage below 80% is not eligible for condonation except with Head of Department recommendation.",
-      "Lab Attendance",
-      4,
-    ),
-    clause(
-      examPolicy.id,
-      "5.1",
-      "A student who is not eligible due to shortage of attendance shall be marked 'Debarred' for that course in the end-semester examination.",
-      "Eligibility",
-      18,
-    ),
-    clause(
-      examPolicy.id,
-      "5.2",
-      "Re-registration for a debarred course follows the same attendance requirements as a first attempt.",
-      "Eligibility",
-      18,
-    ),
-    clause(
-      reval.id,
-      "2.1",
-      "A student may apply for revaluation of theory end-semester answer scripts within 10 working days of result publication by paying the prescribed fee.",
-      "Revaluation",
-      3,
-    ),
-    clause(
-      hostel.id,
-      "4.1",
-      "Hostel inmates must return by 9:00 PM on weekdays and 10:00 PM on weekends unless prior written permission is obtained from the Warden.",
-      "Hostel Discipline",
-      7,
-    ),
-    clause(
-      fee.id,
-      "1.2",
-      "Semester tuition fees must be paid on or before the notified due date. Late payment attracts a fine of Rs. 100 per day up to a maximum of Rs. 2000.",
-      "Fee Payment",
-      2,
-    ),
-    clause(
-      facultyPol.id,
-      "6.1",
-      "Faculty members are entitled to 12 days of casual leave and 8 days of special casual leave in an academic year as per university service rules.",
-      "Leave",
-      9,
-    ),
-    clause(
-      hrPol.id,
-      "3.1",
-      "Non-teaching staff working hours are 9:00 AM to 5:00 PM with a one-hour lunch break. Overtime requires prior departmental approval.",
-      "Service Conditions",
-      5,
-    ),
-  ];
-  for (const c of clauses) store.insertClause(c);
-
-  store.insertCircular({
+  // Policies come from official Vignan PDFs via syncVignanPolicies (not mock seed text).
+  store.insertNotification({
     id: store.newId(),
-    title: "Clarification on Attendance Condonation Fee",
-    circular_number: "CIR/08/2025",
-    issued_date: "2025-08-12",
-    description:
-      "The condonation fee remains Rs. 500 per course for AY 2025-26. Applications must be routed through the class counsellor.",
-    status: "active",
-    modifies_policy_id: attendance2024.id,
-    document_url: "seed://circular-08-2025",
-  });
-  store.insertCircular({
-    id: store.newId(),
-    title: "Exam Form Submission Timeline",
-    circular_number: "CIR/03/2026",
-    issued_date: "2026-03-01",
-    description: "End-semester exam registration closes 15 days before the first exam date.",
-    status: "active",
-    modifies_policy_id: examPolicy.id,
-    document_url: "seed://circular-03-2026",
-  });
-
-  store.insertConflict({
-    id: store.newId(),
-    policy_a_id: attendance2024.id,
-    policy_b_id: cseLab.id,
-    clause_a: "3.1",
-    clause_b: "2.1",
-    description:
-      "University policy requires 75% attendance for all courses; CSE department lab rules require 80% with limited condonation. Both policies are currently active.",
-    status: "open",
-    resolved_by: null,
+    user_id: null,
+    role_targets: ["student", "faculty", "staff", "super_admin"],
+    severity: "info",
+    title: "Official Vignan policies",
+    body: "Policy library syncs from https://vignan.ac.in/newvignan/policies.php — answers cite real university documents by role.",
+    event_type: "new_document",
+    policy_id: null,
+    read: false,
     created_at: store.now(),
   });
-
-  const demoNotifications: Array<{
-    roles: Role[];
-    severity: "critical" | "warning" | "info";
-    title: string;
-    body: string;
-    event_type:
-      | "policy_updated"
-      | "circular_published"
-      | "conflict_detected"
-      | "ambiguity_spike"
-      | "clarification_request"
-      | "review_pending"
-      | "new_document";
-    policy_id?: string | null;
-  }> = [
-    {
-      roles: ["student"],
-      severity: "info",
-      title: "Attendance policy reminder",
-      body: "Minimum 75% attendance is required. Condonation may apply between 65–75% with documents.",
-      event_type: "policy_updated",
-      policy_id: attendance2024.id,
-    },
-    {
-      roles: ["student", "faculty"],
-      severity: "warning",
-      title: "Circular CIR/08/2025 published",
-      body: "Clarification on attendance condonation fee for AY 2025-26.",
-      event_type: "circular_published",
-      policy_id: attendance2024.id,
-    },
-    {
-      roles: ["faculty"],
-      severity: "info",
-      title: "Faculty leave policy available",
-      body: "Casual leave and special casual leave rules are indexed for Policy AI chat.",
-      event_type: "new_document",
-      policy_id: facultyPol.id,
-    },
-    {
-      roles: ["staff"],
-      severity: "info",
-      title: "HR service regulations online",
-      body: "Staff working hours and overtime approval rules are now searchable.",
-      event_type: "new_document",
-      policy_id: hrPol.id,
-    },
-    {
-      roles: ["staff", "super_admin"],
-      severity: "critical",
-      title: "Open conflict: Attendance vs CSE Lab",
-      body: "University 75% vs CSE lab 80% attendance — awaiting Super Admin resolution.",
-      event_type: "conflict_detected",
-      policy_id: attendance2024.id,
-    },
-    {
-      roles: ["super_admin"],
-      severity: "warning",
-      title: "Review pending",
-      body: "At least one policy conflict and faculty flags may need governance action.",
-      event_type: "review_pending",
-      policy_id: cseLab.id,
-    },
-    {
-      roles: ["faculty", "staff", "super_admin"],
-      severity: "info",
-      title: "Ambiguity spike watch",
-      body: "Short queries like “condonation?” should trigger clarification options in chat.",
-      event_type: "ambiguity_spike",
-    },
-    {
-      roles: ["student", "faculty", "staff", "super_admin"],
-      severity: "info",
-      title: "Welcome to UniPolicy AI",
-      body: "Ask policy questions in chat. Every answer cites an official clause when available.",
-      event_type: "new_document",
-    },
-  ];
-
-  for (const n of demoNotifications) {
-    store.insertNotification({
-      id: store.newId(),
-      user_id: null,
-      role_targets: n.roles,
-      severity: n.severity,
-      title: n.title,
-      body: n.body,
-      event_type: n.event_type,
-      policy_id: n.policy_id ?? null,
-      read: false,
-      created_at: store.now(),
-    });
-  }
 }

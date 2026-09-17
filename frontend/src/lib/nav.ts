@@ -46,7 +46,7 @@ export function navForRole(role: Role): NavItem[] {
     default:
       return [
         { label: "Dashboard", to: "/app/dashboard", icon: "dashboard" },
-        { label: "Ask AI", to: "/app/chat", icon: "chat" },
+        { label: "Ask Agent", to: "/app/chat", icon: "chat" },
         { label: "Policies", to: "/app/policies", icon: "policies" },
         { label: "Circulars", to: "/app/circulars", icon: "circulars" },
         { label: "History", to: "/app/history", icon: "history" },
@@ -57,29 +57,29 @@ export function navForRole(role: Role): NavItem[] {
 
 export const SUGGESTIONS: Record<Exclude<Role, "super_admin">, string[]> = {
   student: [
-    "Can I get attendance condonation?",
-    "What is the minimum CGPA for promotion?",
-    "How do I apply for a leave of absence?",
-    "What are hostel entry timings?",
+    "What does the student code of conduct require?",
+    "How do scholarships work at Vignan?",
+    "How do I raise a student grievance?",
+    "What is the admission policy?",
   ],
   faculty: [
-    "What is the procedure for approving attendance?",
-    "What is the examination malpractice policy?",
-    "How are continuous assessment marks calculated?",
-    "Which circulars affect attendance rules?",
+    "What is in the faculty code of conduct?",
+    "What are the service rules for faculty?",
+    "Summarize the research policy",
+    "What does the consultancy policy cover?",
   ],
   staff: [
-    "What is the current procedure for leave approval?",
-    "What documents are required for fee refunds?",
-    "How are circulars linked to active policies?",
-    "Which policies are currently under review?",
+    "What do the service rules say for staff?",
+    "What is the financial policy?",
+    "How does the maintenance policy work?",
+    "What does the e-governance framework cover?",
   ],
 };
 
 export const FOCUS_AREAS: Record<Exclude<Role, "super_admin">, string[]> = {
-  student: ["Attendance", "Examinations", "Fees", "Hostel"],
-  faculty: ["Academic regulations", "Examination", "Attendance procedures", "Faculty rules"],
-  staff: ["Administrative", "HR / Leave", "Fees", "Governance circulars"],
+  student: ["Code of conduct", "Scholarships", "Grievance", "Admissions"],
+  faculty: ["Faculty conduct", "Service rules", "Research", "Consultancy"],
+  staff: ["Service rules", "Finance", "Facilities", "E-governance"],
 };
 
 export interface RoleTheme {
@@ -106,27 +106,27 @@ export const ROLE_THEME: Record<Exclude<Role, "super_admin">, RoleTheme> = {
   student: {
     ...SHARED_THEME,
     label: "Student portal",
-    tagline: "Ask about attendance, exams, fees, and campus rules — with exact clause citations.",
+    tagline: "Official Vignan student policies — conduct, scholarships, grievance, and more.",
     letter:
-      "Hi {name} — ask me anything about student policies. I’ll answer only from official documents.",
+      "Hi {name} — ask me anything about student policies. I’ll answer only from official Vignan documents.",
     primaryCta: "Ask Policy AI",
     secondaryCta: "My policies",
   },
   faculty: {
     ...SHARED_THEME,
     label: "Faculty portal",
-    tagline: "Academic regulations, examination policies, and faculty procedures in one place.",
+    tagline: "Faculty conduct, service rules, research, and academic policy documents.",
     letter:
-      "Hi {name} — I focus on teaching, assessment, and faculty regulations. Ask with the clause you need.",
+      "Hi {name} — I focus on faculty regulations and academic policy. Ask with the clause you need.",
     primaryCta: "Ask academic AI",
     secondaryCta: "Academic policies",
   },
   staff: {
     ...SHARED_THEME,
     label: "Staff portal",
-    tagline: "Administrative, HR, and operational policies for day-to-day campus work.",
+    tagline: "Service rules, finance, facilities, and e-governance policies for campus operations.",
     letter:
-      "Hi {name} — I help with administrative procedures, leave, fees workflows, and institutional circulars.",
+      "Hi {name} — I help with staff procedures and institutional policies from official Vignan PDFs.",
     primaryCta: "Ask operations AI",
     secondaryCta: "Admin policies",
   },

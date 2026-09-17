@@ -68,7 +68,9 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
   const [title, setTitle] = useState("");
   const [category, setCategory] = useState("Academic");
   const [versionYear, setVersionYear] = useState(String(new Date().getFullYear()));
+  const [versionLabel, setVersionLabel] = useState("");
   const [effectiveDate, setEffectiveDate] = useState(new Date().toISOString().slice(0, 10));
+  const [effectiveUntil, setEffectiveUntil] = useState("");
   const [authority, setAuthority] = useState("university");
   const [department, setDepartment] = useState("");
   const [text, setText] = useState("");
@@ -135,6 +137,8 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
       form.set("version_year", versionYear);
       form.set("effective_date", effectiveDate);
       form.set("authority_level", authority);
+      if (versionLabel.trim()) form.set("version_label", versionLabel.trim());
+      if (effectiveUntil.trim()) form.set("effective_until", effectiveUntil.trim());
       if (department.trim()) form.set("department", department.trim());
       if (text.trim()) form.set("text", text.trim());
       if (file) form.set("file", file);
@@ -150,6 +154,8 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
       setTitle("");
       setText("");
       setFile(null);
+      setVersionLabel("");
+      setEffectiveUntil("");
       await load();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -292,6 +298,15 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
               />
             </label>
             <label className="text-sm font-medium text-navy">
+              Version label (optional)
+              <input
+                className="ui-input mt-1"
+                value={versionLabel}
+                onChange={(e) => setVersionLabel(e.target.value)}
+                placeholder="e.g. 3.0"
+              />
+            </label>
+            <label className="text-sm font-medium text-navy">
               Effective date
               <input
                 className="ui-input mt-1"
@@ -299,6 +314,15 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
                 value={effectiveDate}
                 onChange={(e) => setEffectiveDate(e.target.value)}
                 required
+              />
+            </label>
+            <label className="text-sm font-medium text-navy">
+              Effective until (optional)
+              <input
+                className="ui-input mt-1"
+                type="date"
+                value={effectiveUntil}
+                onChange={(e) => setEffectiveUntil(e.target.value)}
               />
             </label>
             <label className="text-sm font-medium text-navy">
@@ -418,19 +442,76 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
       )}
 
       {section === "manage" && (
-        <QueueSection
+        <>
+          <section className="mb-4 rounded-xl border border-line bg-white p-4">
+            <h3 className="text-sm font-bold text-navy">Official Vignan library</h3>
+            <p className="mt-1 text-xs text-muted">
+              Replace mock/demo policies with PDFs from{" "}
+              <a
+                className="text-accent underline"
+                href="https://vignan.ac.in/newvignan/policies.php"
+                target="_blank"
+                rel="noreferrer"
+              >
+                vignan.ac.in/policies
+              </a>
+              . Audiences are set per document (student / faculty / staff).
+            </p>
+            <button
+              type="button"
+              disabled={busy}
+              className="ui-btn ui-btn-primary mt-3"
+              onClick={() => {
+                if (
+                  !window.confirm(
+                    "Re-import official Vignan policies? Existing seed/vignan.ac.in policies will be replaced.",
+                  )
+                ) {
+                  return;
+                }
+                setBusy(true);
+                void api
+                  .syncVignanPolicies(true)
+                  .then(async (res) => {
+                    setMessage(
+                      `Vignan sync: imported ${res.imported}, removed ${res.removed}, failed ${res.failed.length}.`,
+                    );
+                    await load();
+                  })
+                  .catch((err) => {
+                    setError(err instanceof Error ? err.message : "Sync failed");
+                  })
+                  .finally(() => setBusy(false));
+              }}
+            >
+              {busy ? "Syncing…" : "Sync from vignan.ac.in"}
+            </button>
+          </section>
+          <QueueSection
           title="All policies"
           empty="No policies in the library."
           items={policies.map((p) => (
             <PolicyRowActions
               key={p.id}
+              policy={p}
               title={p.title}
-              meta={`${p.category} · ${p.version_year} · ${p.authority_level} · ${
+              meta={`${p.category} · v${p.version_label ?? p.version_year} · ${p.effective_date}${
+                p.effective_until ? `→${p.effective_until}` : ""
+              } · ${p.authority_level} · ${
                 p.status === "active" ? "CURRENT" : p.status.replace("_", " ").toUpperCase()
               }`}
               viewing={viewingId === p.id}
               clauses={viewingId === p.id ? viewClauses : []}
               onView={() => void viewPolicy(p.id)}
+              onSaveMetadata={(body) =>
+                void api
+                  .updatePolicyMetadata(p.id, body)
+                  .then(async () => {
+                    setMessage(`Updated metadata for “${p.title}”.`);
+                    await load();
+                  })
+                  .catch((err) => setError(err instanceof Error ? err.message : "Metadata update failed"))
+              }
               primaryLabel={p.status === "under_review" ? "Approve & activate" : undefined}
               onPrimary={
                 p.status === "under_review"
@@ -463,6 +544,7 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
             />
           ))}
         />
+        </>
       )}
 
       {section === "versions" && (
@@ -626,9 +708,11 @@ export function AdminPage({ section: sectionProp }: { section?: AdminSection }) 
 function PolicyRowActions({
   title,
   meta,
+  policy,
   viewing,
   clauses,
   onView,
+  onSaveMetadata,
   primaryLabel,
   onPrimary,
   onRetire,
@@ -636,20 +720,90 @@ function PolicyRowActions({
 }: {
   title: string;
   meta: string;
+  policy?: PolicyRow;
   viewing: boolean;
   clauses: { clause_number: string; clause_text: string; section: string }[];
   onView: () => void;
+  onSaveMetadata?: (body: {
+    version_label?: string;
+    effective_date?: string;
+    effective_until?: string | null;
+    approved_by?: string | null;
+    approval_date?: string | null;
+  }) => void;
   primaryLabel?: string;
   onPrimary?: () => void;
   onRetire?: () => void;
   onDelete: () => void;
 }) {
+  const [editLabel, setEditLabel] = useState(policy?.version_label ?? "");
+  const [editFrom, setEditFrom] = useState(policy?.effective_date ?? "");
+  const [editUntil, setEditUntil] = useState(policy?.effective_until ?? "");
+  const [editApprovedBy, setEditApprovedBy] = useState(policy?.approved_by ?? "");
+  const [editApprovalDate, setEditApprovalDate] = useState(policy?.approval_date ?? "");
+
+  useEffect(() => {
+    if (!policy) return;
+    setEditLabel(policy.version_label ?? String(policy.version_year));
+    setEditFrom(policy.effective_date);
+    setEditUntil(policy.effective_until ?? "");
+    setEditApprovedBy(policy.approved_by ?? "");
+    setEditApprovalDate(policy.approval_date ?? "");
+  }, [policy]);
+
+  const srcType = policy?.source_type ?? (policy?.status === "demo_only" ? "MOCK_DEMO" : undefined);
+  const badgeClass =
+    srcType === "REGULATION"
+      ? "bg-purple-100 text-purple-800 border-purple-300"
+      : srcType === "OFFICIAL_VIGNAN"
+        ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+        : srcType === "CIRCULAR"
+          ? "bg-amber-100 text-amber-800 border-amber-300"
+          : srcType === "MOCK_DEMO" || policy?.status === "demo_only"
+            ? "bg-rose-100 text-rose-800 border-rose-300"
+            : "bg-blue-100 text-blue-800 border-blue-300";
+
+  const badgeText =
+    srcType === "OFFICIAL_VIGNAN"
+      ? "OFFICIAL VIGNAN"
+      : srcType === "MOCK_DEMO" || policy?.status === "demo_only"
+        ? "DEMO ONLY"
+        : srcType
+          ? srcType.replace("_", " ")
+          : null;
+
   return (
     <div className="border-b border-line py-3">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-semibold text-navy">{title}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold text-navy">{title}</p>
+            {badgeText && (
+              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${badgeClass}`}>
+                {badgeText}
+              </span>
+            )}
+            {policy?.regulation && (
+              <span className="rounded-full border border-purple-200 bg-purple-50 px-2 py-0.5 text-[10px] font-semibold text-purple-700">
+                {policy.regulation}
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted">{meta}</p>
+          {policy?.source_url && (
+            <p className="mt-0.5 text-[11px] text-muted">
+              Source:{" "}
+              <a
+                href={policy.source_url}
+                target="_blank"
+                rel="noreferrer"
+                className="text-accent hover:underline"
+              >
+                {policy.source_url}
+              </a>
+              {policy.retrieved_at ? ` · Retrieved ${policy.retrieved_at.slice(0, 10)}` : ""}
+            </p>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="ui-btn ui-btn-ghost text-sm" onClick={onView}>
@@ -676,7 +830,89 @@ function PolicyRowActions({
         </div>
       </div>
       {viewing && (
-        <div className="mt-3 space-y-2 rounded-xl bg-parchment p-3">
+        <div className="mt-3 space-y-3 rounded-xl bg-parchment p-3">
+          {policy && (
+            <div className="rounded-lg bg-white/80 p-3 text-xs text-navy">
+              <p className="font-semibold text-sm">Policy metadata</p>
+              <p className="mt-1 text-muted">
+                ID: {policy.id} · Family: {policy.family_id ?? policy.id}
+                {policy.supersedes_id ? ` · Supersedes: ${policy.supersedes_id}` : ""}
+                {policy.superseded_by_id ? ` · Superseded by: ${policy.superseded_by_id}` : ""}
+              </p>
+              {onSaveMetadata && (
+                <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                  <label className="font-medium">
+                    Version label
+                    <input
+                      className="ui-input mt-1"
+                      value={editLabel}
+                      onChange={(e) => setEditLabel(e.target.value)}
+                    />
+                  </label>
+                  <label className="font-medium">
+                    Status (read-only)
+                    <input
+                      className="ui-input mt-1"
+                      value={policy.status === "active" ? "CURRENT" : policy.status}
+                      disabled
+                    />
+                  </label>
+                  <label className="font-medium">
+                    Effective from
+                    <input
+                      className="ui-input mt-1"
+                      type="date"
+                      value={editFrom}
+                      onChange={(e) => setEditFrom(e.target.value)}
+                    />
+                  </label>
+                  <label className="font-medium">
+                    Effective until
+                    <input
+                      className="ui-input mt-1"
+                      type="date"
+                      value={editUntil}
+                      onChange={(e) => setEditUntil(e.target.value)}
+                    />
+                  </label>
+                  <label className="font-medium">
+                    Approved by
+                    <input
+                      className="ui-input mt-1"
+                      value={editApprovedBy}
+                      onChange={(e) => setEditApprovedBy(e.target.value)}
+                    />
+                  </label>
+                  <label className="font-medium">
+                    Approval date
+                    <input
+                      className="ui-input mt-1"
+                      type="date"
+                      value={editApprovalDate}
+                      onChange={(e) => setEditApprovalDate(e.target.value)}
+                    />
+                  </label>
+                  <div className="sm:col-span-2">
+                    <button
+                      type="button"
+                      className="ui-btn ui-btn-primary text-sm"
+                      onClick={() =>
+                        onSaveMetadata({
+                          version_label: editLabel.trim() || String(policy.version_year),
+                          effective_date: editFrom,
+                          effective_until: editUntil.trim() || null,
+                          approved_by: editApprovedBy.trim() || null,
+                          approval_date: editApprovalDate.trim() || null,
+                        })
+                      }
+                    >
+                      Save metadata
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           {clauses.length === 0 ? (
             <p className="text-sm text-muted">No clauses indexed for this policy.</p>
           ) : (

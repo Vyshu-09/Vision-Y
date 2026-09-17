@@ -8,7 +8,9 @@
     "start": "tsx src/index.ts",
     "test": "tsx --test src/**/*.test.ts",
     "sync:media": "tsx scripts/syncCloudinaryMedia.ts",
-    "migrate:mongo": "tsx scripts/migrateToMongo.ts"
+    "migrate:mongo": "tsx scripts/migrateToMongo.ts",
+    "migrate:metadata": "tsx scripts/migrateMetadata.ts",
+    "sync:vignan-policies": "tsx scripts/syncVignanPolicies.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.39.0",

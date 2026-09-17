@@ -135,15 +135,22 @@ select {
 @keyframes float-bot {
   0%,
   100% {
-    transform: translateY(0);
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-8px) rotate(-2deg);
   }
   50% {
-    transform: translateY(-6px);
+    transform: translateY(-4px) rotate(0deg);
+  }
+  75% {
+    transform: translateY(-10px) rotate(2deg);
   }
 }
 
 .animate-float-bot {
-  animation: float-bot 3.2s ease-in-out infinite;
+  animation: float-bot 2.8s ease-in-out infinite;
+  will-change: transform;
 }
 
 .page-enter {

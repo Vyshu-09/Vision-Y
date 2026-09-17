@@ -43,6 +43,26 @@ export async function connectMongo(): Promise<Db> {
   return db;
 }
 
+/** Create useful indexes for policy versioning / clause lookup. Idempotent. */
+export async function ensureIndexes(): Promise<void> {
+  const database = await getMongoDb();
+  if (!database) return;
+  const policies = database.collection("policies");
+  const clauses = database.collection("clauses");
+  await Promise.all([
+    policies.createIndex({ family_id: 1 }),
+    policies.createIndex({ status: 1 }),
+    policies.createIndex({ family_id: 1, version_label: 1 }),
+    policies.createIndex({ effective_date: 1 }),
+    policies.createIndex({ effective_until: 1 }),
+    policies.createIndex({ category: 1 }),
+    clauses.createIndex({ policy_id: 1 }),
+    clauses.createIndex({ policy_id: 1, clause_number: 1 }),
+    clauses.createIndex({ hierarchy_path: 1 }),
+  ]);
+  console.log("[mongo] Policy/clause indexes ensured");
+}
+
 export async function getMongoDb(): Promise<Db | null> {
   if (!isMongoConfigured()) return null;
   return connectMongo();

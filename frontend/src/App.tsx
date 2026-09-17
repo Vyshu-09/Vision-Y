@@ -10,6 +10,7 @@ import { HistoryPage } from "./pages/History";
 import { LoginPage } from "./pages/Login";
 import { NotificationsPage } from "./pages/Notifications";
 import { PoliciesPage } from "./pages/Policies";
+import { PolicyDetailPage } from "./pages/PolicyDetail";
 import { ProfilePage } from "./pages/Profile";
 import { AdminPage, type AdminSection } from "./pages/Admin";
 import { dashboardPath, type Role } from "./types";
@@ -90,6 +91,7 @@ export default function App() {
             }
           />
           <Route path="policies" element={<PoliciesPage />} />
+          <Route path="policies/:id" element={<PolicyDetailPage />} />
           <Route
             path="circulars"
             element={

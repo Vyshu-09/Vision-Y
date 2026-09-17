@@ -11,12 +11,20 @@ chatRouter.post("/", requireAuth, async (req, res) => {
     res.status(400).json({ error: "question is required" });
     return;
   }
+  const rawAsOf = req.body?.as_of_date != null ? String(req.body.as_of_date).trim() : "";
+  const as_of_date = /^\d{4}-\d{2}-\d{2}$/.test(rawAsOf) ? rawAsOf : null;
+
   const auth = req.auth!;
+  const user = store.getUser(auth.userId);
   try {
     const result = await runPolicyPipeline({
       question,
       role: auth.role,
       userId: auth.userId,
+      as_of_date,
+      user_program: user?.program,
+      user_regulation: user?.regulation,
+      user_department: user?.department,
     });
     res.json({
       answer_text: result.answer_text,
@@ -31,6 +39,8 @@ chatRouter.post("/", requireAuth, async (req, res) => {
       ),
       pipeline_stages: result.logs.map((l) => l.stage),
       logs: result.logs,
+      as_of_date: result.as_of_date,
+      as_of_source: result.as_of_source,
     });
   } catch (err) {
     console.error(err);

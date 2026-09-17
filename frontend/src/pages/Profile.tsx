@@ -71,6 +71,14 @@ export function ProfilePage() {
     { label: "Email", value: user.email },
     { label: idLabel, value: user.employee_id ?? "—" },
     { label: isStudent ? "Student portal ID" : "Faculty / staff ID", value: portalId },
+    ...(isStudent
+      ? [
+          { label: "Program", value: user.program ?? "B.Tech" },
+          { label: "Regulation", value: user.regulation ?? "—" },
+          { label: "Admission Year", value: user.admission_year ? String(user.admission_year) : "—" },
+          { label: "Batch", value: user.batch ?? "—" },
+        ]
+      : []),
     { label: "Phone", value: user.phone ?? "—" },
     { label: "Department", value: user.department ?? "—" },
     { label: "Designation", value: user.designation ?? roleLabel(user.role) },

@@ -6,6 +6,9 @@ import { connectMongo, isMongoConfigured } from "./mongo.js";
 import { loadSnapshotFromMongo, saveSnapshotToMongo, type StoreSnapshot } from "./mongoStore.js";
 import { seedDemoData } from "./seed.js";
 import { store } from "./store.js";
+import { normalizeSnapshotPoliciesAndClauses } from "./normalize.js";
+import { ensureIndexes } from "./mongo.js";
+import { needsOfficialPolicySync, syncVignanPolicies } from "../services/syncVignanPolicies.js";
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
 let persistReady = false;
@@ -33,9 +36,13 @@ function toSnapshot(): StoreSnapshot {
 }
 
 function applySnapshot(snap: StoreSnapshot): void {
+  const { policies, clauses } = normalizeSnapshotPoliciesAndClauses(
+    snap.policies ?? [],
+    snap.clauses ?? [],
+  );
   store.users = new Map(snap.users.map((u) => [u.id, u]));
-  store.policies = new Map(snap.policies.map((p) => [p.id, p]));
-  store.clauses = new Map(snap.clauses.map((c) => [c.id, c]));
+  store.policies = new Map(policies.map((p) => [p.id, p]));
+  store.clauses = new Map(clauses.map((c) => [c.id, c]));
   store.circulars = new Map(snap.circulars.map((c) => [c.id, c]));
   store.queries = new Map(snap.queries.map((q) => [q.id, q]));
   store.flags = new Map(snap.flags.map((f) => [f.id, f]));
@@ -102,10 +109,13 @@ export async function bootstrapPersistentStore(): Promise<void> {
   if (isMongoConfigured()) {
     try {
       await connectMongo();
+      await ensureIndexes();
       persistMode = "mongo";
       const mongoSnap = await loadSnapshotFromMongo();
       if (mongoSnap?.users?.length) {
         applySnapshot(mongoSnap);
+        // Soft-migrate: persist normalized metadata fields back without wiping data
+        await saveNow();
         console.log(
           `[persist] Loaded MongoDB data (${mongoSnap.policies.length} policies, ${mongoSnap.users.length} users)`,
         );
@@ -136,6 +146,9 @@ export async function bootstrapPersistentStore(): Promise<void> {
       seedDemoData();
       saveFileNow();
       console.log(`[persist] Seeded demo data → ${dataFilePath()}`);
+    } else {
+      // Soft-migrate file snapshot with new metadata defaults
+      saveFileNow();
     }
   }
 
@@ -145,10 +158,34 @@ export async function bootstrapPersistentStore(): Promise<void> {
     console.log(`[persist] Remapped ${remapped} avatar URLs to Cloudinary`);
   }
 
+  // Replace mock seed policies with official Vignan PDFs when empty / mock / missing vignan.ac.in
+  if (process.env.SKIP_VIGNAN_SYNC !== "1" && needsOfficialPolicySync()) {
+    try {
+      console.log("[persist] Syncing official policies from vignan.ac.in …");
+      const result = await syncVignanPolicies({ replaceExisting: true });
+      await saveNow();
+      console.log(
+        `[persist] Vignan sync: imported=${result.imported} removed=${result.removed} failed=${result.failed.length}`,
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error("[persist] Vignan policy sync failed:", msg);
+    }
+  }
+
   persistReady = true;
   store.onChange(scheduleSave);
 }
 
 export function getPersistMode(): "mongo" | "file" {
   return persistMode;
+}
+
+/** Flush pending store changes (used by CLI scripts). */
+export async function flushPersistentStore(): Promise<void> {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  await saveNow();
 }

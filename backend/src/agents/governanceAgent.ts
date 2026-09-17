@@ -14,10 +14,19 @@ function questionFit(clause: CandidateClause, question: string): number {
   if (clause.department && q.includes(clause.department.toLowerCase())) score += 0.15;
   if (/\blab/.test(q) && /\blab/.test(clause.clause_text.toLowerCase())) score += 0.15;
   if (/condon/.test(q) && /condon/.test(clause.clause_text.toLowerCase())) score += 0.25;
+  if (/\bhostel\b/.test(q) && /\bhostel\b/.test(clause.clause_text.toLowerCase() + " " + clause.section.toLowerCase())) {
+    score += 0.2;
+  }
+  if (/\b(entry|timing|return|curfew)\b/.test(q) && /\b(return|9:00|10:00|weekday|weekend)\b/.test(clause.clause_text.toLowerCase())) {
+    score += 0.2;
+  }
   return score;
 }
 
-function pickByPrecedence(involved: CandidateClause[]): {
+function pickByPrecedence(
+  involved: CandidateClause[],
+  userRegulation?: string | null,
+): {
   winner: CandidateClause | null;
   rationale: string;
   tied: boolean;
@@ -26,6 +35,7 @@ function pickByPrecedence(involved: CandidateClause[]): {
     return { winner: null, rationale: "No clauses in conflict set.", tied: true };
   }
 
+  // 1. Explicit override language (e.g. "notwithstanding", "shall prevail")
   const withOverride = involved.filter((c) => OVERRIDE_RE.test(c.clause_text));
   if (withOverride.length === 1) {
     return {
@@ -35,6 +45,25 @@ function pickByPrecedence(involved: CandidateClause[]): {
     };
   }
 
+  // 2. Applicable cohort regulation match if student regulation is specified
+  if (userRegulation) {
+    const userRegNorm = userRegulation.toLowerCase();
+    const cohortMatches = involved.filter(
+      (c) =>
+        (c.regulation || "").toLowerCase() === userRegNorm ||
+        (c.version_label || "").toLowerCase() === userRegNorm ||
+        c.policy_title.toLowerCase().includes(userRegNorm),
+    );
+    if (cohortMatches.length === 1) {
+      return {
+        winner: cohortMatches[0],
+        rationale: `Student cohort regulation (${userRegulation}) takes precedence: ${cohortMatches[0].policy_title} clause ${cohortMatches[0].clause_number}.`,
+        tied: false,
+      };
+    }
+  }
+
+  // 3. Higher authority (university > department)
   const byAuthority = [...involved].sort(
     (a, b) => AUTHORITY_RANK[b.authority_level] - AUTHORITY_RANK[a.authority_level],
   );
@@ -49,6 +78,7 @@ function pickByPrecedence(involved: CandidateClause[]): {
     };
   }
 
+  // 4. Newer effective date within same authority level
   const byDate = [...topAuthority].sort((a, b) => b.effective_date.localeCompare(a.effective_date));
   if (byDate[0].effective_date !== byDate[1]?.effective_date) {
     return {
@@ -126,7 +156,7 @@ export function runGovernanceAgent(input: GovernanceAgentInput): GovernanceAgent
     }
   }
 
-  const { winner, rationale, tied } = pickByPrecedence(involved);
+  const { winner, rationale, tied } = pickByPrecedence(involved, input.user_regulation);
   if (tied || !winner) {
     return {
       applicable_clause: null,

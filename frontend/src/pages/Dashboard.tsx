@@ -151,7 +151,7 @@ function StudentBody({
   return (
     <>
       <section className="grid gap-3 sm:grid-cols-3">
-        <QuickLink to="/app/chat" title="Ask AI" subtitle="Get a cited answer in seconds" accent={accent} />
+        <QuickLink to="/app/chat" title="Ask Agent" subtitle="Get a cited answer in seconds" accent={accent} />
         <QuickLink to="/app/notifications" title="Alerts" subtitle="Policy updates for students" accent={accent} />
         <QuickLink to="/app/policies" title="Policies" subtitle="Current rules you can access" accent={accent} />
       </section>
@@ -227,7 +227,7 @@ function StudentBody({
               </li>
             ))}
             {queries.length === 0 && (
-              <p className="text-sm text-muted">No questions yet — start from Ask AI.</p>
+              <p className="text-sm text-muted">No questions yet — start from Ask Agent.</p>
             )}
           </ul>
           <div className="mt-4">

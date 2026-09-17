@@ -57,31 +57,43 @@ function mockComplete(messages: ChatMessage[]): string {
     return JSON.stringify({ conflict: false, pairs: [] });
   }
 
-  if (blob.includes("answer_request") || blob.includes("applicable clause")) {
-    const clauseMatch = user.match(
-      /Applicable clause[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\nDetail level:|$)/i,
+  if (
+    blob.includes("answer_request") ||
+    blob.includes("applicable clause") ||
+    blob.includes("agent 53") ||
+    blob.includes("authoritative document") ||
+    blob.includes("clause")
+  ) {
+    let clauseText = "";
+    const clauseMatch1 = user.match(
+      /Applicable clause[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\nDetail level:|\nSource URL:|$)/i,
     );
-    const clauseText = clauseMatch?.[1]?.trim() ?? "";
-    const circMatch = user.match(/Related official circulars[\s\S]*?:\n([\s\S]+?)(?:\nDetail level:|$)/i);
+    const clauseMatch2 = user.match(
+      /Clause\s+[\d.]+[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\nDetail level:|\nSource URL:|$)/i,
+    );
+    clauseText = (clauseMatch1?.[1] || clauseMatch2?.[1] || "").trim();
+
+    const circMatch = user.match(/Related official circulars[\s\S]*?:\n([\s\S]+?)(?:\nDetail level:|\nSource URL:|$)/i);
     const circText = circMatch?.[1]?.trim() ?? "";
 
     let circularNote = "";
     if (circText) {
-      const firstLine = circText.split("\n").find((l) => l.trim().startsWith("-")) ?? circText.split("\n")[0];
-      circularNote = ` Related circular guidance: ${firstLine.replace(/^-+\s*/, "").trim()}`;
-      const detailLine = circText
-        .split("\n")
-        .map((l) => l.trim())
-        .find((l) => l && !l.startsWith("-"));
-      if (detailLine) circularNote += ` ${detailLine}`;
+      const lines = circText.split("\n").map((l) => l.trim()).filter(Boolean);
+      const firstLine = lines.find((l) => l.startsWith("-")) ?? lines[0];
+      if (firstLine) {
+        circularNote = ` Related circular guidance: ${firstLine.replace(/^-+\s*/, "").trim()}`;
+      }
+      const detailLine = lines.find((l) => !l.startsWith("-"));
+      if (detailLine) {
+        circularNote += ` ${detailLine}`;
+      }
     }
 
     if (clauseText) {
       if (/condon|fee|attendance/i.test(user) || /condon|fee|attendance/i.test(clauseText)) {
         return (
-          `According to the active policy clause: ${clauseText.slice(0, 260)}${clauseText.length > 260 ? "…" : ""}` +
-          (circularNote ||
-            " Check any linked circular for fee amounts and application routing.")
+          `According to the authoritative document clause: ${clauseText.slice(0, 300)}${clauseText.length > 300 ? "…" : ""}` +
+          (circularNote || " Check any linked circular for fee amounts and application routing.")
         );
       }
       return (

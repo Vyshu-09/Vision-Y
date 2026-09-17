@@ -1,5 +1,12 @@
 export type Role = "student" | "faculty" | "staff" | "super_admin";
-export type PolicyStatus = "active" | "superseded" | "under_review" | "draft" | "expired";
+export type PolicyStatus = "active" | "superseded" | "under_review" | "draft" | "expired" | "demo_only";
+export type SourceType =
+  | "OFFICIAL_VIGNAN"
+  | "UNIVERSITY_UPLOADED"
+  | "CIRCULAR"
+  | "REGULATION"
+  | "MOCK_DEMO";
+export type DocumentType = "POLICY" | "REGULATION" | "HANDBOOK" | "CIRCULAR";
 export type FlagStatus = "open" | "resolved";
 export type ConflictStatus = "open" | "resolved";
 export type AuthorityLevel = "university" | "department";
@@ -27,32 +34,74 @@ export interface User {
   designation: string | null;
   employee_id: string | null;
   phone: string | null;
+  admission_year?: number | null;
+  program?: string | null;
+  regulation?: string | null;
+  batch?: string | null;
 }
 
 export interface Policy {
   id: string;
+  /** Groups versions of the same logical policy. Defaults to `id` for legacy rows. */
+  family_id: string;
   title: string;
   category: string;
+  description: string | null;
   version_year: number;
+  /** Human label e.g. "2.0"; defaults to String(version_year). */
+  version_label: string;
   effective_date: string;
+  effective_until: string | null;
   status: PolicyStatus;
+  source_type?: SourceType;
+  document_type?: DocumentType;
   source_file_url: string | null;
+  source_url?: string | null;
+  source_page?: number | null;
+  retrieved_at?: string;
+  content_hash?: string | null;
+  document_version?: string | null;
+  program?: string | null;
+  regulation?: string | null;
+  document_name: string | null;
   uploaded_by: string | null;
   uploaded_at: string;
+  updated_at: string;
   authority_level: AuthorityLevel;
   department: string | null;
   audience: Role[];
   supersedes_id: string | null;
+  superseded_by_id: string | null;
+  approved_by: string | null;
+  approval_date: string | null;
+  metadata: Record<string, string> | null;
 }
 
 export interface PolicyClause {
   id: string;
   policy_id: string;
+  policy_version_label: string;
   clause_number: string;
+  sub_clause_number: string | null;
   clause_text: string;
   section: string;
+  section_number: string | null;
+  section_title: string | null;
+  chapter_number: string | null;
+  chapter_title: string | null;
+  parent_clause_id: string | null;
+  hierarchy_path: string;
   page_number: number | null;
+  source_document: string | null;
+  source_type?: SourceType;
+  document_type?: DocumentType;
+  regulation?: string | null;
+  program?: string | null;
+  source_url?: string | null;
+  retrieved_at?: string;
   embedding_vector: number[];
+  created_at: string;
+  updated_at: string;
 }
 
 export interface Circular {
@@ -79,13 +128,22 @@ export interface SourceCitation {
   policy_id: string;
   policy_title: string;
   version_year: number;
+  version_label?: string;
   clause_number: string;
   clause_text: string;
   effective_date: string;
+  effective_until?: string | null;
   authority_level: AuthorityLevel;
   section: string;
   page_number: number | null;
   status: PolicyStatus;
+  hierarchy_path?: string;
+  source_type?: SourceType;
+  document_type?: DocumentType;
+  regulation?: string | null;
+  program?: string | null;
+  source_url?: string | null;
+  retrieved_at?: string;
 }
 
 export interface FlagRecord {
@@ -157,6 +215,10 @@ export interface PublicUser {
   designation: string | null;
   employee_id: string | null;
   phone: string | null;
+  admission_year?: number | null;
+  program?: string | null;
+  regulation?: string | null;
+  batch?: string | null;
 }
 
 export function normalizeRole(role: string): Role | null {

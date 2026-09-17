@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import type { SourceCitation } from "../types";
 
 export function SourceCard({ sources, detailed }: { sources: SourceCitation[]; detailed?: boolean }) {
@@ -30,29 +31,51 @@ export function SourceCard({ sources, detailed }: { sources: SourceCitation[]; d
               key={`${s.policy_id}-${s.clause_number}`}
               className="border-t border-gold/30 pt-3 first:border-t-0 first:pt-0"
             >
-              <p className="font-display text-lg leading-snug text-navy">{s.policy_title}</p>
-              {s.section && (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-display text-lg leading-snug text-navy">{s.policy_title}</p>
+                {s.source_type && (
+                  <span
+                    className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide ${
+                      s.source_type === "REGULATION"
+                        ? "bg-purple-100 text-purple-800 border border-purple-300"
+                        : s.source_type === "OFFICIAL_VIGNAN"
+                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                          : s.source_type === "CIRCULAR"
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : "bg-blue-100 text-blue-800 border border-blue-300"
+                    }`}
+                  >
+                    {s.source_type === "OFFICIAL_VIGNAN" ? "OFFICIAL VIGNAN" : s.source_type.replace("_", " ")}
+                  </span>
+                )}
+              </div>
+
+              {(s.hierarchy_path || s.section) && (
                 <p className="mt-1 text-sm font-medium text-navy/80">
-                  Section: {s.section}
+                  {s.hierarchy_path ? s.hierarchy_path : `Section: ${s.section}`}
                   {s.page_number != null ? ` · Page ${s.page_number}` : ""}
                 </p>
               )}
-              <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-3">
+              <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
                 <div>
                   <dt className="text-[11px] uppercase tracking-wide text-muted">Clause</dt>
                   <dd className="font-semibold">{s.clause_number}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Version</dt>
-                  <dd className="font-semibold">{s.version_year}</dd>
+                  <dt className="text-[11px] uppercase tracking-wide text-muted">Version / Regulation</dt>
+                  <dd className="font-semibold">{s.regulation ?? s.version_label ?? s.version_year}</dd>
                 </div>
                 <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Effective</dt>
-                  <dd className="font-semibold">{s.effective_date}</dd>
+                  <dt className="text-[11px] uppercase tracking-wide text-muted">Page</dt>
+                  <dd className="font-semibold">{s.page_number != null ? `p. ${s.page_number}` : "Document"}</dd>
                 </div>
                 <div>
                   <dt className="text-[11px] uppercase tracking-wide text-muted">Authority</dt>
                   <dd className="font-semibold capitalize">{s.authority_level}</dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] uppercase tracking-wide text-muted">Effective</dt>
+                  <dd className="font-semibold">{s.effective_date}</dd>
                 </div>
                 <div>
                   <dt className="text-[11px] uppercase tracking-wide text-muted">Status</dt>
@@ -66,6 +89,27 @@ export function SourceCard({ sources, detailed }: { sources: SourceCitation[]; d
                   {s.clause_text}
                 </p>
               )}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Link to={`/app/policies/${s.policy_id}`} className="ui-btn ui-btn-ghost text-xs">
+                  View Document
+                </Link>
+                <Link
+                  to={`/app/policies/${s.policy_id}#clause-${s.clause_number}`}
+                  className="ui-btn ui-btn-ghost text-xs"
+                >
+                  View Clause
+                </Link>
+                {s.source_url && (
+                  <a
+                    href={s.source_url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-crimson hover:underline"
+                  >
+                    Official URL (vignan.ac.in) ↗
+                  </a>
+                )}
+              </div>
             </article>
           ))}
         </div>

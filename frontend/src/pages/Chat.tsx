@@ -3,8 +3,8 @@ import { useLocation } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import { ClarificationForm } from "../components/ClarificationForm";
+import { EvidencePanel } from "../components/EvidencePanel";
 import { FlagForm } from "../components/FlagForm";
-import { SourceCard } from "../components/SourceCard";
 import { SUGGESTIONS } from "../lib/nav";
 import type { ChatResponse, Role } from "../types";
 
@@ -18,6 +18,7 @@ export function ChatPage() {
   const location = useLocation();
   const preset = (location.state as { question?: string } | null)?.question;
   const [question, setQuestion] = useState(preset ?? "");
+  const [asOfDate, setAsOfDate] = useState("");
   const [turns, setTurns] = useState<Turn[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,7 +47,7 @@ export function ChatPage() {
     setBusy(true);
     setError(null);
     try {
-      const response = await api.chat(q);
+      const response = await api.chat(q, asOfDate.trim() || null);
       setTurns((prev) => [...prev, { question: q, response }]);
       setQuestion("");
     } catch (err) {
@@ -58,10 +59,22 @@ export function ChatPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="font-display text-3xl text-navy">Ask AI</h1>
-      <p className="mt-1 text-muted">
-        Answers come from indexed policy clauses. Expand the Source card to verify the rule.
-      </p>
+      <div className="flex items-start gap-3 sm:gap-4">
+        <img
+          src="/images/agent-robo-cute-clear.png"
+          alt=""
+          className="animate-float-bot mt-0.5 h-14 w-14 shrink-0 object-contain drop-shadow-md sm:h-16 sm:w-16"
+          onError={(e) => {
+            (e.currentTarget as HTMLImageElement).src = "/images/agent-robo-cute.png";
+          }}
+        />
+        <div>
+          <h1 className="font-display text-3xl text-navy">Ask Agent</h1>
+          <p className="mt-1 text-muted">
+            Answers come from indexed policy clauses. Expand the Source card to verify the rule.
+          </p>
+        </div>
+      </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {suggestions.map((s) => (
@@ -83,11 +96,20 @@ export function ChatPage() {
           rows={3}
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Ask a policy question…"
+          placeholder="Ask a policy question… (try “as of 2024-07-01”)"
         />
-        <div className="mt-3 flex flex-wrap items-center gap-3">
+        <div className="mt-3 flex flex-wrap items-end gap-3">
+          <label className="flex flex-col gap-1 text-xs font-semibold text-navy">
+            As of (optional)
+            <input
+              type="date"
+              className="ui-input py-2 text-sm"
+              value={asOfDate}
+              onChange={(e) => setAsOfDate(e.target.value)}
+            />
+          </label>
           <button type="submit" disabled={busy} className="ui-btn ui-btn-primary">
-            {busy ? "Running agents…" : "Ask"}
+            {busy ? "Running agents…" : "Ask Agent"}
           </button>
         </div>
         {error && <p className="mt-2 text-sm text-red-700">{error}</p>}
@@ -149,7 +171,7 @@ export function ChatPage() {
                 </p>
               )}
 
-              <SourceCard sources={r.sources} detailed />
+              <EvidencePanel response={r} detailed />
 
               <div className="mt-4 flex flex-wrap gap-2">
                 <button

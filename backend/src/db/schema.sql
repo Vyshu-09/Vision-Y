@@ -38,28 +38,49 @@ CREATE TABLE users (
 
 CREATE TABLE policies (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  family_id UUID,
   title TEXT NOT NULL,
   category TEXT NOT NULL,
+  description TEXT,
   version_year INTEGER NOT NULL,
+  version_label TEXT,
   effective_date DATE NOT NULL,
+  effective_until DATE,
   status policy_status NOT NULL DEFAULT 'under_review',
   source_file_url TEXT,
+  document_name TEXT,
   uploaded_by UUID REFERENCES users(id),
   uploaded_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
   authority_level authority_level NOT NULL DEFAULT 'university',
   department TEXT,
   audience user_role[] NOT NULL DEFAULT ARRAY['student','faculty','staff','super_admin']::user_role[],
-  supersedes_id UUID REFERENCES policies(id)
+  supersedes_id UUID REFERENCES policies(id),
+  superseded_by_id UUID REFERENCES policies(id),
+  approved_by TEXT,
+  approval_date DATE,
+  metadata JSONB
 );
 
 CREATE TABLE policy_clauses (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   policy_id UUID NOT NULL REFERENCES policies(id) ON DELETE CASCADE,
+  policy_version_label TEXT,
   clause_number TEXT NOT NULL,
+  sub_clause_number TEXT,
   clause_text TEXT NOT NULL,
   section TEXT NOT NULL DEFAULT 'General',
+  section_number TEXT,
+  section_title TEXT,
+  chapter_number TEXT,
+  chapter_title TEXT,
+  parent_clause_id UUID REFERENCES policy_clauses(id),
+  hierarchy_path TEXT,
   page_number INTEGER,
-  embedding_vector vector(384)
+  source_document TEXT,
+  embedding_vector vector(384),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE circulars (

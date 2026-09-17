@@ -3,6 +3,7 @@ import type {
   Circular,
   ClarificationTicket,
   Notification,
+  PolicyClauseRow,
   PolicyRow,
   PublicUser,
   QueryRecord,
@@ -92,10 +93,13 @@ export const api = {
   removeAvatar: () =>
     request<{ user: PublicUser }>("/api/auth/avatar", { method: "DELETE" }),
 
-  chat: (question: string) =>
+  chat: (question: string, asOfDate?: string | null) =>
     request<ChatResponse>("/api/chat", {
       method: "POST",
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({
+        question,
+        ...(asOfDate ? { as_of_date: asOfDate } : {}),
+      }),
     }),
 
   chatHistory: () => request<{ queries: QueryRecord[] }>("/api/chat/history"),
@@ -104,7 +108,7 @@ export const api = {
     request<{ policies: PolicyRow[] }>(`/api/policies?q=${encodeURIComponent(q)}`),
 
   policy: (id: string) =>
-    request<{ policy: PolicyRow; clauses: unknown[] }>(`/api/policies/${id}`),
+    request<{ policy: PolicyRow; clauses: PolicyClauseRow[] }>(`/api/policies/${id}`),
 
   circulars: () => request<{ circulars: Circular[] }>("/api/circulars"),
 
@@ -184,6 +188,24 @@ export const api = {
       method: "DELETE",
     }),
 
+  updatePolicyMetadata: (
+    id: string,
+    body: {
+      version_label?: string;
+      effective_date?: string;
+      effective_until?: string | null;
+      status?: string;
+      supersedes_id?: string | null;
+      approved_by?: string | null;
+      approval_date?: string | null;
+      description?: string | null;
+    },
+  ) =>
+    request<{ policy: PolicyRow }>(`/api/admin/policies/${id}/metadata`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
   approveSupersession: (id: string, notify_roles?: string[]) =>
     request<{ supersession: unknown; notified_roles?: string[] }>(`/api/admin/supersessions/${id}/approve`, {
       method: "POST",
@@ -210,4 +232,16 @@ export const api = {
 
   rejectFlag: (id: string) =>
     request(`/api/admin/flags/${id}/reject`, { method: "POST", body: "{}" }),
+
+  syncVignanPolicies: (replaceExisting = true) =>
+    request<{
+      ok: boolean;
+      imported: number;
+      removed: number;
+      skipped: number;
+      failed: Array<{ title: string; error: string }>;
+    }>("/api/admin/sync-vignan-policies", {
+      method: "POST",
+      body: JSON.stringify({ replaceExisting }),
+    }),
 };

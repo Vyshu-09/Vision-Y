@@ -40,13 +40,20 @@ async function replaceCollection(name: MongoCollectionName, rows: DocWithId[]): 
   const col = db.collection(name);
   await col.deleteMany({});
   if (!rows.length) return;
-  await col.insertMany(
-    rows.map((row) => ({
-      ...row,
-      _id: row.id,
-    })),
-    { ordered: false },
-  );
+  const seen = new Set<string>();
+  const uniqueRows: any[] = [];
+  for (const row of rows) {
+    if (!seen.has(row.id)) {
+      seen.add(row.id);
+      uniqueRows.push({ ...row, _id: row.id });
+    }
+  }
+  if (!uniqueRows.length) return;
+  try {
+    await col.insertMany(uniqueRows, { ordered: false });
+  } catch (err: any) {
+    if (err.code !== 11000 && !err.writeErrors) throw err;
+  }
 }
 
 export async function saveSnapshotToMongo(snap: StoreSnapshot): Promise<void> {

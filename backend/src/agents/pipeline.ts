@@ -48,14 +48,53 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
       clarification_prompt: ambiguity.prompt,
       clarification_options: ambiguity.options,
       logs,
+      as_of_date: input.as_of_date && /^\d{4}-\d{2}-\d{2}$/.test(input.as_of_date)
+        ? input.as_of_date
+        : new Date().toISOString().slice(0, 10),
+      as_of_source: input.as_of_date ? "explicit" : "default",
     };
   }
 
-  const search = runPolicySearchAgent({ question: input.question, role: input.role, topK: 8 });
-  logs.push(log("policy_search", search));
+  const search = runPolicySearchAgent({
+    question: input.question,
+    role: input.role,
+    topK: 8,
+    user_program: input.user_program,
+    user_regulation: input.user_regulation,
+    user_department: input.user_department,
+  });
+  logs.push(
+    log(
+      "policy_search",
+      search.candidates.map((c) => ({
+        source_type: c.source_type,
+        document_type: c.document_type,
+        title: c.policy_title,
+        regulation: c.regulation,
+        clause: c.clause_number,
+        page: c.page_number,
+        score: Math.round(c.similarity_score * 1000) / 1000,
+      })),
+    ),
+  );
 
-  const versioned = runVersionAgent({ question: input.question, candidates: search.candidates });
-  logs.push(log("version", versioned));
+  const versioned = runVersionAgent({
+    question: input.question,
+    candidates: search.candidates,
+    as_of_date: input.as_of_date,
+    user_regulation: input.user_regulation,
+    user_program: input.user_program,
+  });
+  logs.push(
+    log("version", {
+      as_of_date: versioned.as_of_date,
+      as_of_source: versioned.as_of_source,
+      kept_count: versioned.current_candidates.length,
+      current_regulations: versioned.current_candidates.map((c) => c.regulation ?? c.version_label),
+    }),
+  );
+  const as_of_date = versioned.as_of_date;
+  const as_of_source = versioned.as_of_source;
 
   const conflicts = runConflictAgent({ current_candidates: versioned.current_candidates });
   logs.push(log("conflict", conflicts));
@@ -90,8 +129,18 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
     question: input.question,
     current_candidates: versioned.current_candidates,
     conflicting_pairs: conflicts.conflicting_pairs,
+    user_regulation: input.user_regulation,
   });
-  logs.push(log("governance", governed));
+  logs.push(
+    log("governance", {
+      applicable_policy: governed.applicable_clause?.policy_title,
+      regulation: governed.applicable_clause?.regulation,
+      authority: governed.applicable_clause?.authority_level,
+      clause: governed.applicable_clause?.clause_number,
+      escalated: governed.escalated,
+      rationale: governed.rationale,
+    }),
+  );
 
   // Escalate only when governance cannot pick a winner (true conflict / no clause).
   if (governed.escalated || !governed.applicable_clause) {
@@ -153,6 +202,8 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
       clarification_prompt: null,
       clarification_options: [],
       logs,
+      as_of_date,
+      as_of_source,
     };
   }
 
@@ -229,5 +280,7 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
     clarification_prompt: null,
     clarification_options: [],
     logs,
+    as_of_date,
+    as_of_source,
   };
 }

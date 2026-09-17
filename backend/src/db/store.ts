@@ -32,6 +32,16 @@ class MemoryStore {
     this.listeners.push(listener);
   }
 
+  /** Temporarily suppress persist listeners (e.g. bulk Vignan sync). */
+  pauseChangeNotifications(): () => void {
+    const saved = this.listeners;
+    this.listeners = [];
+    return () => {
+      this.listeners = saved;
+      this.emitChange();
+    };
+  }
+
   private emitChange(): void {
     for (const listener of this.listeners) listener();
   }
@@ -70,6 +80,15 @@ class MemoryStore {
 
   allClauses(): PolicyClause[] {
     return [...this.clauses.values()];
+  }
+
+  updateClause(id: string, patch: Partial<PolicyClause>): PolicyClause | undefined {
+    const existing = this.clauses.get(id);
+    if (!existing) return undefined;
+    const updated = { ...existing, ...patch };
+    this.clauses.set(id, updated);
+    this.emitChange();
+    return updated;
   }
 
   listCirculars(): Circular[] {
@@ -323,12 +342,15 @@ export function citationFrom(policy: Policy, clause: PolicyClause): SourceCitati
     policy_id: policy.id,
     policy_title: policy.title,
     version_year: policy.version_year,
+    version_label: policy.version_label,
     clause_number: clause.clause_number,
     clause_text: clause.clause_text,
     effective_date: policy.effective_date,
+    effective_until: policy.effective_until,
     authority_level: policy.authority_level,
     section: clause.section,
     page_number: clause.page_number,
     status: policy.status,
+    hierarchy_path: clause.hierarchy_path,
   };
 }

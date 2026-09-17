@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 import type { PolicyRow } from "../types";
@@ -54,7 +55,7 @@ export function PoliciesPage() {
               <div>
                 <p className="font-display text-lg text-navy">{p.title}</p>
                 <p className="mt-1 text-sm text-muted">
-                  {p.category} · v{p.version_year} · {p.authority_level}
+                  {p.category} · v{p.version_label ?? p.version_year} · {p.authority_level}
                   {p.department ? ` · ${p.department}` : ""}
                 </p>
               </div>
@@ -67,13 +68,17 @@ export function PoliciesPage() {
                       : "bg-slate-100 text-slate-700"
                 }`}
               >
-                {p.status.replaceAll("_", " ")}
+                {p.status === "active" ? "CURRENT" : p.status.replaceAll("_", " ")}
               </span>
             </div>
             <p className="mt-3 text-xs text-muted">
               Effective {p.effective_date}
+              {p.effective_until ? ` → ${p.effective_until}` : ""}
               {p.clause_count != null ? ` · ${p.clause_count} clauses` : ""}
             </p>
+            <Link to={`/app/policies/${p.id}`} className="ui-btn ui-btn-ghost mt-3 inline-flex text-sm">
+              View Policy
+            </Link>
           </li>
         ))}
         {policies.length === 0 && (

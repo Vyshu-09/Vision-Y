@@ -58,11 +58,65 @@ function lexicalBoost(question: string, clauseText: string, section: string, tit
       boost -= 0.2;
     }
   }
+
+  // Hostel entry / return timings
+  if (/\bhostel\b/.test(question.toLowerCase()) && /\b(entry|timing|return|curfew|in\s*time)\b/.test(question.toLowerCase())) {
+    if (/\bhostel\b/i.test(blob) && /\b(return|9:00|10:00|warden|weekday|weekend)\b/i.test(clauseText)) {
+      boost += 0.35;
+    }
+  }
+
+  return boost;
+}
+
+function regulationBoost(
+  question: string,
+  clause: { regulation?: string | null; program?: string | null; policy_title?: string },
+  userRegulation?: string | null,
+  userProgram?: string | null,
+): number {
+  let boost = 0;
+  const q = question.toLowerCase();
+  const regInDoc = (clause.regulation || "").toLowerCase();
+  const title = (clause.policy_title || "").toLowerCase();
+
+  // Check if query explicitly asks for a regulation (e.g., "R26", "R25", "R22", "R22.1")
+  const explicitRegMatch = q.match(/\b(r26|r25|r22\.1|r22|r21|r18)\b/i);
+  if (explicitRegMatch) {
+    const explicitTarget = explicitRegMatch[1].toLowerCase();
+    if (regInDoc === explicitTarget || title.includes(explicitTarget)) {
+      return 0.45;
+    }
+    // Penalize other regulations if a specific one was explicitly asked
+    if (regInDoc && regInDoc !== explicitTarget) {
+      return -0.25;
+    }
+  }
+
+  // If user has a registered cohort regulation (e.g., student admitted under R22)
+  if (userRegulation) {
+    const userRegNorm = userRegulation.toLowerCase();
+    if (regInDoc === userRegNorm || title.includes(userRegNorm)) {
+      boost += 0.35;
+    } else if (regInDoc && regInDoc !== userRegNorm) {
+      // Deprecate other regulations when answering cohort questions
+      boost -= 0.15;
+    }
+  }
+
+  // Program match (e.g., B.Tech)
+  if (userProgram && clause.program) {
+    if (userProgram.toLowerCase() === clause.program.toLowerCase()) {
+      boost += 0.1;
+    }
+  }
+
   return boost;
 }
 
 /**
- * Policy Search Agent — role-filtered retrieval over official clauses only.
+ * Policy Search Agent — role-filtered retrieval over authoritative official Vignan documents only.
+ * Mock/demo documents are strictly excluded from retrieval.
  */
 export function runPolicySearchAgent(
   input: PolicySearchInput,
@@ -78,10 +132,33 @@ export function runPolicySearchAgent(
     .map((clause) => {
       const policy = getPolicy(clause.policy_id);
       if (!policy) return null;
+
+      // STRICT GUARD: Never retrieve mock or demo_only documents for answers
+      if (
+        policy.status === "demo_only" ||
+        policy.source_type === "MOCK_DEMO" ||
+        (policy.source_file_url ?? "").startsWith("seed://")
+      ) {
+        return null;
+      }
+
+      // Role check: super_admin can see all, otherwise check audience
       if (!policy.audience.includes(input.role) && input.role !== "super_admin") return null;
+
       const semantic = cosineSimilarity(queryVec, clause.embedding_vector);
       const lexical = lexicalBoost(input.question, clause.clause_text, clause.section, policy.title);
-      const score = semantic * 0.55 + lexical * 0.45;
+      const regBoost = regulationBoost(
+        input.question,
+        {
+          regulation: clause.regulation ?? policy.regulation,
+          program: clause.program ?? policy.program,
+          policy_title: policy.title,
+        },
+        input.user_regulation,
+        input.user_program,
+      );
+
+      const score = semantic * 0.50 + lexical * 0.35 + regBoost;
       return toCandidate(policy, clause, score);
     })
     .filter((c): c is NonNullable<typeof c> => c !== null)

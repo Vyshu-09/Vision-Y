@@ -8,6 +8,8 @@ import { requireAuth, requireRole } from "../middleware/auth.js";
 import { extractTextFromFile, processUploadedPolicy } from "../services/documentProcessor.js";
 import type { AuthorityLevel, Role } from "../types.js";
 import { notifyForEvent } from "../services/notificationEngine.js";
+import { parseIsoDate, validateEffectiveRange } from "../db/normalize.js";
+import { syncVignanPolicies } from "../services/syncVignanPolicies.js";
 
 fs.mkdirSync(config.uploadDir, { recursive: true });
 
@@ -105,6 +107,13 @@ adminRouter.post("/upload", (req, res) => {
       const category = String(req.body.category ?? "").trim();
       const version_year = Number(req.body.version_year);
       const effective_date = String(req.body.effective_date ?? "");
+      const version_label = req.body.version_label ? String(req.body.version_label).trim() : null;
+      const effective_until_raw = req.body.effective_until ? String(req.body.effective_until).trim() : "";
+      const effective_until = effective_until_raw ? parseIsoDate(effective_until_raw) : null;
+      const description = req.body.description ? String(req.body.description).trim() : null;
+      const approved_by = req.body.approved_by ? String(req.body.approved_by).trim() : null;
+      const approval_date_raw = req.body.approval_date ? String(req.body.approval_date).trim() : "";
+      const approval_date = approval_date_raw ? parseIsoDate(approval_date_raw) : null;
       const authority_level = (req.body.authority_level ?? "university") as AuthorityLevel;
       const department = req.body.department ? String(req.body.department) : null;
 
@@ -113,11 +122,23 @@ adminRouter.post("/upload", (req, res) => {
         return;
       }
 
+      const rangeErr = validateEffectiveRange(effective_date, effective_until);
+      if (rangeErr) {
+        res.status(400).json({ error: rangeErr });
+        return;
+      }
+      if (effective_until_raw && !effective_until) {
+        res.status(400).json({ error: "effective_until must be a valid YYYY-MM-DD date or empty" });
+        return;
+      }
+
       let text = String(req.body.text ?? "");
       let source_file_url: string | null = null;
+      let document_name: string | null = null;
 
       if (req.file) {
         source_file_url = req.file.path;
+        document_name = req.file.originalname;
         text = await extractTextFromFile(req.file.path, req.file.originalname);
       }
 
@@ -134,11 +155,17 @@ adminRouter.post("/upload", (req, res) => {
         title,
         category,
         version_year,
+        version_label,
         effective_date,
+        effective_until,
         authority_level,
         department,
         uploaded_by: req.auth!.userId,
         source_file_url: source_file_url ?? "pasted://text",
+        document_name,
+        description,
+        approved_by,
+        approval_date,
         text,
         audience: audience.length ? audience : undefined,
       });
@@ -163,7 +190,27 @@ adminRouter.post("/policies/:id/activate", (req, res) => {
     res.status(404).json({ error: "Under-review policy not found" });
     return;
   }
-  const updated = store.updatePolicy(policy.id, { status: "active" });
+  const now = store.now();
+  const updated = store.updatePolicy(policy.id, {
+    status: "active",
+    updated_at: now,
+    approved_by: policy.approved_by ?? req.auth!.userId,
+    approval_date: policy.approval_date ?? now.slice(0, 10),
+  });
+
+  if (policy.supersedes_id) {
+    const older = store.getPolicy(policy.supersedes_id);
+    if (older && older.status !== "superseded") {
+      store.updatePolicy(older.id, {
+        status: "superseded",
+        superseded_by_id: policy.id,
+        effective_until: older.effective_until ?? now.slice(0, 10),
+        updated_at: now,
+      });
+    } else if (older && !older.superseded_by_id) {
+      store.updatePolicy(older.id, { superseded_by_id: policy.id, updated_at: now });
+    }
+  }
 
   // If notify_roles is sent (including []), use it; otherwise default to audience (non-admin)
   const bodyHasNotify = req.body && Object.prototype.hasOwnProperty.call(req.body, "notify_roles");
@@ -200,8 +247,21 @@ adminRouter.post("/supersessions/:id/approve", (req, res) => {
     res.status(404).json({ error: "Pending supersession not found" });
     return;
   }
-  store.updatePolicy(row.old_policy_id, { status: "superseded" });
-  store.updatePolicy(row.new_policy_id, { status: "active" });
+  const now = store.now();
+  store.updatePolicy(row.old_policy_id, {
+    status: "superseded",
+    superseded_by_id: row.new_policy_id,
+    updated_at: now,
+  });
+  const newPol = store.getPolicy(row.new_policy_id);
+  store.updatePolicy(row.new_policy_id, {
+    status: "active",
+    supersedes_id: newPol?.supersedes_id ?? row.old_policy_id,
+    family_id: store.getPolicy(row.old_policy_id)?.family_id ?? newPol?.family_id,
+    updated_at: now,
+    approved_by: newPol?.approved_by ?? req.auth!.userId,
+    approval_date: newPol?.approval_date ?? now.slice(0, 10),
+  });
   const updated = store.updateSupersession(row.id, { status: "approved" });
 
   const newPolicy = store.getPolicy(row.new_policy_id);
@@ -230,7 +290,10 @@ adminRouter.post("/policies/:id/reject", (req, res) => {
     res.status(404).json({ error: "Under-review policy not found" });
     return;
   }
-  const updated = store.updatePolicy(policy.id, { status: "superseded" });
+  const updated = store.updatePolicy(policy.id, {
+    status: "superseded",
+    updated_at: store.now(),
+  });
   res.json({ policy: updated });
 });
 
@@ -245,7 +308,12 @@ adminRouter.post("/policies/:id/supersede", (req, res) => {
     res.status(400).json({ error: "Policy is already superseded" });
     return;
   }
-  const updated = store.updatePolicy(policy.id, { status: "superseded" });
+  const now = store.now();
+  const updated = store.updatePolicy(policy.id, {
+    status: "superseded",
+    updated_at: now,
+    effective_until: policy.effective_until ?? now.slice(0, 10),
+  });
   notifyForEvent({
     event: "policy_updated",
     roles: ["super_admin"],
@@ -254,6 +322,95 @@ adminRouter.post("/policies/:id/supersede", (req, res) => {
     body: `${policy.title} (${policy.version_year}) was marked superseded by Super Admin.`,
     policyId: policy.id,
   });
+  res.json({ policy: updated });
+});
+
+/** Thin metadata update for Phase 1 admin fields (does not redesign dashboard). */
+adminRouter.patch("/policies/:id/metadata", (req, res) => {
+  const policy = store.getPolicy(req.params.id);
+  if (!policy) {
+    res.status(404).json({ error: "Policy not found" });
+    return;
+  }
+
+  const patch: Record<string, unknown> = { updated_at: store.now() };
+
+  if (req.body.version_label != null) {
+    const label = String(req.body.version_label).trim();
+    if (!label) {
+      res.status(400).json({ error: "version_label cannot be empty" });
+      return;
+    }
+    patch.version_label = label;
+  }
+  if (req.body.effective_date != null) {
+    const d = parseIsoDate(req.body.effective_date);
+    if (!d) {
+      res.status(400).json({ error: "effective_date must be YYYY-MM-DD" });
+      return;
+    }
+    patch.effective_date = d;
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, "effective_until")) {
+    const raw = req.body.effective_until;
+    if (raw == null || raw === "") patch.effective_until = null;
+    else {
+      const d = parseIsoDate(raw);
+      if (!d) {
+        res.status(400).json({ error: "effective_until must be YYYY-MM-DD or empty" });
+        return;
+      }
+      patch.effective_until = d;
+    }
+  }
+  if (req.body.status != null) {
+    const allowed = new Set(["active", "superseded", "under_review", "draft", "expired"]);
+    const status = String(req.body.status);
+    if (!allowed.has(status)) {
+      res.status(400).json({ error: "invalid status" });
+      return;
+    }
+    patch.status = status;
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, "supersedes_id")) {
+    const sid = req.body.supersedes_id ? String(req.body.supersedes_id) : null;
+    if (sid && !store.getPolicy(sid)) {
+      res.status(400).json({ error: "supersedes_id policy not found" });
+      return;
+    }
+    patch.supersedes_id = sid;
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, "approved_by")) {
+    patch.approved_by = req.body.approved_by ? String(req.body.approved_by) : null;
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, "approval_date")) {
+    const raw = req.body.approval_date;
+    if (raw == null || raw === "") patch.approval_date = null;
+    else {
+      const d = parseIsoDate(raw);
+      if (!d) {
+        res.status(400).json({ error: "approval_date must be YYYY-MM-DD or empty" });
+        return;
+      }
+      patch.approval_date = d;
+    }
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, "description")) {
+    patch.description = req.body.description ? String(req.body.description) : null;
+  }
+
+  const nextFrom = String(patch.effective_date ?? policy.effective_date);
+  const nextUntil =
+    patch.effective_until !== undefined
+      ? (patch.effective_until as string | null)
+      : policy.effective_until;
+  const rangeErr = validateEffectiveRange(nextFrom, nextUntil);
+  if (rangeErr) {
+    res.status(400).json({ error: rangeErr });
+    return;
+  }
+
+  const updated = store.updatePolicy(policy.id, patch);
   res.json({ policy: updated });
 });
 
@@ -386,4 +543,19 @@ adminRouter.post("/flags/:id/reject", (req, res) => {
   });
 
   res.json({ flag: updated });
+});
+
+/** Pull official PDFs from https://vignan.ac.in/newvignan/policies.php (role audiences applied). */
+adminRouter.post("/sync-vignan-policies", async (req, res) => {
+  try {
+    const replaceExisting = req.body?.replaceExisting !== false;
+    const result = await syncVignanPolicies({
+      replaceExisting,
+      uploadedBy: req.auth!.userId,
+    });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    res.status(500).json({ error: msg });
+  }
 });
