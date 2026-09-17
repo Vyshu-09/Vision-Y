@@ -43,14 +43,67 @@ function lexicalBoost(question: string, clauseText: string, section: string, tit
   const q = tokens(question);
   if (!q.length) return 0;
   const blob = `${clauseText} ${section} ${title}`.toLowerCase();
+  const qLower = question.toLowerCase();
   let hits = 0;
   for (const t of q) {
     if (blob.includes(t)) hits += 1;
   }
   let boost = hits / q.length;
 
-  // Prefer the actual minimum-attendance rule over condonation side-rules
-  if (/\bminimum\b/.test(question.toLowerCase()) && /\battendance\b/.test(question.toLowerCase())) {
+  // 1. Refund & Admission Cancellation
+  if (/\b(refund|cancel|cancellation)\b/.test(qLower)) {
+    if (/\b(refund|cancel|cancellation)\b/.test(blob)) {
+      boost += 0.45;
+    }
+    if (/\bfee fixation\b/.test(blob)) {
+      boost -= 0.25;
+    }
+  }
+
+  // 2. Scholarships & Concessions
+  if (/\b(scholarship|scholarships|merit\s+award|fee\s+concession)\b/.test(qLower)) {
+    if (/\b(scholarship|scholarships)\b/.test(title.toLowerCase()) || /\b(scholarship|concession)\b/.test(blob)) {
+      boost += 0.45;
+    }
+  }
+
+  // 3. Revaluation & Examination Fees
+  if (/\b(revaluation|re-evaluation|verification|exam\s+fee|answer\s+script)\b/.test(qLower)) {
+    if (/\b(revaluation|verification|examination|exam)\b/.test(blob)) {
+      boost += 0.45;
+    }
+  }
+
+  // 4. Grievance Redressal
+  if (/\b(grievance|complaint|redressal|harassment)\b/.test(qLower)) {
+    if (/\bgrievance\b/.test(title.toLowerCase()) || /\b(grievance|complaint)\b/.test(blob)) {
+      boost += 0.45;
+    }
+  }
+
+  // 5. Research & Seed Money
+  if (/\b(research|seed\s+money|journal|publication|scopus)\b/.test(qLower)) {
+    if (/\bresearch\b/.test(title.toLowerCase()) || /\b(research|seed money)\b/.test(blob)) {
+      boost += 0.45;
+    }
+  }
+
+  // 6. Consultancy
+  if (/\b(consultancy|industry\s+project)\b/.test(qLower)) {
+    if (/\bconsultancy\b/.test(title.toLowerCase()) || /\bconsultancy\b/.test(blob)) {
+      boost += 0.45;
+    }
+  }
+
+  // 7. Industrial Training & Internships
+  if (/\b(industrial\s+training|internship|internships)\b/.test(qLower)) {
+    if (/\bindustrial\s+training\b/.test(title.toLowerCase()) || /\b(industrial training|internship)\b/.test(blob)) {
+      boost += 0.45;
+    }
+  }
+
+  // 8. Attendance & Condonation
+  if (/\bminimum\b/.test(qLower) && /\battendance\b/.test(qLower)) {
     if (/minimum\s+(?:of\s+)?\d{1,3}\s*%\s+attendance|maintain\s+a\s+minimum\s+of\s+\d{1,3}\s*%/i.test(clauseText)) {
       boost += 0.35;
     }
@@ -59,8 +112,8 @@ function lexicalBoost(question: string, clauseText: string, section: string, tit
     }
   }
 
-  // Hostel entry / return timings
-  if (/\bhostel\b/.test(question.toLowerCase()) && /\b(entry|timing|return|curfew|in\s*time)\b/.test(question.toLowerCase())) {
+  // 9. Hostel entry / return timings
+  if (/\bhostel\b/.test(qLower) && /\b(entry|timing|return|curfew|in\s*time)\b/.test(qLower)) {
     if (/\bhostel\b/i.test(blob) && /\b(return|9:00|10:00|warden|weekday|weekend)\b/i.test(clauseText)) {
       boost += 0.35;
     }

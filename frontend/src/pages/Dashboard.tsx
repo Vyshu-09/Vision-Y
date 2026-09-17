@@ -8,7 +8,7 @@ import {
   policyCategoryBars,
   policyStatusSlices,
 } from "../components/DashboardCharts";
-import { FOCUS_AREAS, ROLE_THEME } from "../lib/nav";
+import { ROLE_THEME } from "../lib/nav";
 import type { Circular, PolicyRow, QueryRecord, Role } from "../types";
 import { AdminPage } from "./Admin";
 
@@ -178,14 +178,12 @@ function StudentBody({
   policies,
   circulars,
   queries,
-  focus,
   accent,
   unread,
 }: {
   policies: PolicyRow[];
   circulars: Circular[];
   queries: QueryRecord[];
-  focus: string[];
   accent: string;
   unread: number;
 }) {
@@ -225,17 +223,6 @@ function StudentBody({
           <div className="mt-4">
             <CircularList circulars={circulars.slice(0, 4)} />
           </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {focus.map((f) => (
-              <span
-                key={f}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-navy"
-                style={{ background: "rgba(37,99,235,0.08)" }}
-              >
-                {f}
-              </span>
-            ))}
-          </div>
         </section>
 
         <section className="rounded-2xl border border-line bg-white p-5">
@@ -268,14 +255,12 @@ function StudentBody({
 function FacultyBody({
   policies,
   circulars,
-  focus,
   accent,
   unread,
   queryCount,
 }: {
   policies: PolicyRow[];
   circulars: Circular[];
-  focus: string[];
   accent: string;
   unread: number;
   queryCount: number;
@@ -317,23 +302,7 @@ function FacultyBody({
         ]}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-2xl border border-line bg-white p-5">
-          <h2 className="font-display text-xl text-navy">Faculty focus</h2>
-          <p className="mt-1 text-sm text-muted">Teaching and academic procedure areas.</p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {focus.map((f) => (
-              <span
-                key={f}
-                className="rounded-lg px-3 py-1.5 text-sm font-semibold text-navy"
-                style={{ background: "rgba(37,99,235,0.08)" }}
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        </section>
-
+      <div className="grid gap-6">
         <section className="rounded-2xl border border-line bg-white p-5">
           <div className="flex items-center justify-between">
             <h2 className="font-display text-xl text-navy">Academic policies</h2>
@@ -357,7 +326,6 @@ function FacultyBody({
 function StaffBody({
   policies,
   circulars,
-  focus,
   accent,
   active,
   superseded,
@@ -365,7 +333,6 @@ function StaffBody({
 }: {
   policies: PolicyRow[];
   circulars: Circular[];
-  focus: string[];
   accent: string;
   active: number;
   superseded: number;
@@ -421,22 +388,7 @@ function StaffBody({
         ))}
       </section>
 
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
-        <section className="rounded-2xl border border-line bg-white p-5">
-          <h2 className="font-display text-xl text-navy">Focus areas</h2>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {focus.map((f) => (
-              <span
-                key={f}
-                className="rounded-lg px-3 py-1.5 text-xs font-semibold text-navy"
-                style={{ background: "rgba(37,99,235,0.08)" }}
-              >
-                {f}
-              </span>
-            ))}
-          </div>
-        </section>
-
+      <div className="grid gap-6">
         <section className="rounded-2xl border border-line bg-white p-5">
           <h2 className="font-display text-xl text-navy">Administrative policies</h2>
           <div className="mt-4">
@@ -515,7 +467,6 @@ export function DashboardPage() {
         policies={policies}
         circulars={circulars}
         queries={queries}
-        focus={FOCUS_AREAS.student}
         accent={theme.accent}
         unread={unread}
       />
@@ -525,7 +476,6 @@ export function DashboardPage() {
       <FacultyBody
         policies={policies}
         circulars={circulars}
-        focus={FOCUS_AREAS.faculty}
         accent={theme.accent}
         unread={unread}
         queryCount={queries.length}
@@ -536,7 +486,6 @@ export function DashboardPage() {
       <StaffBody
         policies={policies}
         circulars={circulars}
-        focus={FOCUS_AREAS.staff}
         accent={theme.accent}
         active={active}
         superseded={superseded}

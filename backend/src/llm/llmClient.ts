@@ -93,13 +93,34 @@ function mockComplete(messages: ChatMessage[]): string {
     }
 
     if (clauseText) {
+      const clean = clauseText
+        .replace(/[\uE000-\uF8FF\u2022\u25CF\uF06C\uE1F2\uFFFD\u0000\f]/g, " ")
+        .replace(/\b\d+\s+(?:Admission|Research|Examination|Academic|Consultancy|IT|Hostel|Financial|Maintenance|Grievance|Scholarship)\s+Policy(?:\s+and\s+Procedure)?\b/gi, "")
+        .replace(/\b(?:Admission|Research|Examination|Academic|Consultancy|IT|Hostel|Financial|Maintenance|Grievance|Scholarship)\s+Policy(?:\s+and\s+Procedure)?\s+\d+\b/gi, "")
+        .replace(/^\s*(?:and\s+Procedure|Procedure|Policy)\s+/i, "")
+        .replace(/\bBOM\b/g, "Board of Management")
+        .replace(/\bCOE\b/g, "Controller of Examinations")
+        .replace(/\bHOD\b/g, "Head of the Department")
+        .replace(/\bDAA\b/g, "Dean of Academic Affairs")
+        .replace(/\r\n|\r|\n/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const sentences = clean.match(/[^.!?]+[.!?]+/g) || [clean];
+      let summary = sentences.slice(0, 3).join(" ").trim();
+      if (summary.length > 280) {
+        const cleanCut = summary.slice(0, 280).replace(/\s+\S*$/, "");
+        summary = cleanCut.endsWith(".") ? cleanCut : cleanCut + ".";
+      }
+      if (!summary.endsWith(".")) summary += ".";
+
       return (
-        `According to Vignan University policy: ${clauseText.slice(0, 320)}${clauseText.length > 320 ? "…" : ""}` +
+        `According to Vignan University policy: ${summary}` +
         circularNote
       );
     }
     return (
-      "Based on the official Vignan University policy documents, please refer to the verified Source Card for specific clauses and conditions."
+      "Based on official Vignan University policies, please check the verified Source Card below for specific rules and guidelines."
     );
   }
 

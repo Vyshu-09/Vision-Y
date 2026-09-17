@@ -25,12 +25,12 @@ export function circularRelevance(circular: Circular, question: string): number 
   if (!blob.length || !qTokens.size) return 0;
   let hits = 0;
   for (const t of blob) if (qTokens.has(t)) hits += 1;
-  // Boost common policy keywords
+  // Boost specific topic keywords
   const q = question.toLowerCase();
-  if (/condon|fee|attendance/.test(q) && /condon|fee|attendance/.test(circular.description.toLowerCase())) {
+  if (/\bcondon/i.test(q) && /\battendance\b/i.test(q) && /condon|attendance/i.test(circular.description)) {
     hits += 3;
   }
-  if (/exam|registration/.test(q) && /exam|registration/.test(`${circular.title} ${circular.description}`.toLowerCase())) {
+  if (/\bexam\b/i.test(q) && /\bregistration\b/i.test(q) && /exam|registration/i.test(`${circular.title} ${circular.description}`)) {
     hits += 3;
   }
   if (/circular|cir\//.test(q) && circular.circular_number) hits += 2;
@@ -45,10 +45,10 @@ export function findRelatedCirculars(policyId: string | null, question: string, 
   const scored = active
     .map((c) => {
       let score = circularRelevance(c, question);
-      if (policyId && c.modifies_policy_id === policyId) score += 0.5;
+      if (policyId && c.modifies_policy_id === policyId) score += 0.2;
       return { c, score };
     })
-    .filter((x) => x.score > 0.08 || (policyId && x.c.modifies_policy_id === policyId))
+    .filter((x) => x.score >= 0.25)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 

@@ -11,12 +11,15 @@ const AUTHORITY_RANK: Record<AuthorityLevel, number> = {
 function questionFit(clause: CandidateClause, question: string): number {
   const q = question.toLowerCase();
   let score = clause.similarity_score;
+  const blob = `${clause.clause_text} ${clause.section} ${clause.policy_title}`.toLowerCase();
+
   if (clause.department && q.includes(clause.department.toLowerCase())) score += 0.15;
   if (/\blab/.test(q) && /\blab/.test(clause.clause_text.toLowerCase())) score += 0.15;
   if (/condon/.test(q) && /condon/.test(clause.clause_text.toLowerCase())) score += 0.25;
-  if (/\bhostel\b/.test(q) && /\bhostel\b/.test(clause.clause_text.toLowerCase() + " " + clause.section.toLowerCase())) {
-    score += 0.2;
-  }
+  if (/\b(refund|cancel|cancellation)\b/.test(q) && /\b(refund|cancel|cancellation)\b/.test(blob)) score += 0.35;
+  if (/\b(scholarship|scholarships)\b/.test(q) && /\b(scholarship|scholarships)\b/.test(blob)) score += 0.35;
+  if (/\b(revaluation|re-evaluation|verification)\b/.test(q) && /\b(revaluation|verification|examination)\b/.test(blob)) score += 0.35;
+  if (/\bhostel\b/.test(q) && /\bhostel\b/.test(blob)) score += 0.2;
   if (/\b(entry|timing|return|curfew)\b/.test(q) && /\b(return|9:00|10:00|weekday|weekend)\b/.test(clause.clause_text.toLowerCase())) {
     score += 0.2;
   }

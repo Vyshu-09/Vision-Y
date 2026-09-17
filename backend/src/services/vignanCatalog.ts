@@ -118,6 +118,25 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Transparent merit-based admission criteria and procedures.",
     pdf_url: "https://vignan.ac.in/pdf/Admission_Policy%20and%20procedure.pdf",
     audience: STUDENT,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+ADMISSION POLICY & PROCEDURE
+
+Section 1: Merit-Based Admission and Eligibility
+Clause 1.1: Entrance Criteria and Selection
+Admissions to undergraduate and postgraduate programs are strictly merit-based, determined through performance in national and state level entrance examinations (V-SAT, JEE, EAMCET, GATE, CAT, MAT) or qualifying board examination marks. Candidates participate in transparent counseling for seat allocation.
+
+Section 2: Fee Structure and Payment
+Clause 2.1: Course Fee Determination
+The Fee Fixation Committee determines tuition fees for various academic programs prior to the academic year. The fee schedule is published in the official university prospectus and on the website for complete transparency.
+
+Section 3: Cancellation of Admission and Fee Refund Norms
+Clause 3.1: Refund on Admission Cancellation
+If a student requests cancellation of admission before the commencement of classes or on/before the formally notified last date of admission, the university refunds 100% of the tuition fee paid after deducting a nominal processing fee (maximum Rs. 1,000).
+If cancellation is requested within 15 days after the notified last date, 80% of tuition fee is refunded. If requested between 16 to 30 days after the notified last date, 50% of tuition fee is refunded. Beyond 30 days after the last date of admission, no tuition fee refund is admissible. Caution deposit is refunded in full upon clearing no-dues.
+
+Section 4: Examination and Revaluation Rules
+Clause 4.1: Revaluation and Script Verification
+Students who wish to apply for revaluation or personal verification of end-semester examination answer scripts can submit an application through the Controller of Examinations (COE) within the specified notification window along with the prescribed revaluation fee.`,
   },
   {
     title: "Scholarships Policy",

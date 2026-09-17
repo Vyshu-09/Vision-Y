@@ -116,31 +116,26 @@ export async function syncVignanPolicies(opts?: {
         let text = "";
         let hash = "";
 
-        try {
-          if (!fs.existsSync(dest) || fs.statSync(dest).size < 500) {
-            buf = await downloadPdf(entry.pdf_url, dest);
-            await sleep(300);
-          } else {
-            buf = fs.readFileSync(dest);
-          }
-          hash = computeSha256(buf);
-          text = await extractTextFromFile(dest, path.basename(dest));
-        } catch (pdfErr) {
-          if (entry.official_text) {
-            text = entry.official_text;
-            hash = crypto.createHash("sha256").update(text).digest("hex");
-          } else {
+        if (entry.official_text) {
+          text = entry.official_text;
+          hash = crypto.createHash("sha256").update(text).digest("hex");
+        } else {
+          try {
+            if (!fs.existsSync(dest) || fs.statSync(dest).size < 500) {
+              buf = await downloadPdf(entry.pdf_url, dest);
+              await sleep(300);
+            } else {
+              buf = fs.readFileSync(dest);
+            }
+            hash = computeSha256(buf);
+            text = await extractTextFromFile(dest, path.basename(dest));
+          } catch (pdfErr) {
             throw pdfErr;
           }
         }
 
         if (!text.trim() || text.trim().length < 50) {
-          if (entry.official_text) {
-            text = entry.official_text;
-            hash = crypto.createHash("sha256").update(text).digest("hex");
-          } else {
-            throw new Error("Extracted text too short");
-          }
+          throw new Error("Extracted text too short");
         }
 
         const retrieved_at = new Date().toISOString();
@@ -217,6 +212,12 @@ export async function syncVignanPolicies(opts?: {
     }
   } finally {
     resume();
+    try {
+      const { flushPersistentStore } = await import("../db/persist.js");
+      await flushPersistentStore();
+    } catch {
+      // Ignore if called in standalone unit test
+    }
   }
 
   return { imported, failed, removed, skipped };
