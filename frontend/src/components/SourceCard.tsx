@@ -1,119 +1,100 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import type { SourceCitation } from "../types";
 
-export function SourceCard({ sources, detailed }: { sources: SourceCitation[]; detailed?: boolean }) {
-  const [open, setOpen] = useState(true);
+export function SourceCard({ sources }: { sources: SourceCitation[]; detailed?: boolean }) {
+  const [expandedClauseIndex, setExpandedClauseIndex] = useState<number | null>(null);
+
   if (sources.length === 0) {
-    return (
-      <div className="mt-4 rounded-xl border border-dashed border-gold/60 bg-parchment px-4 py-3 text-sm text-muted">
-        No source clause was attached to this answer.
-      </div>
-    );
+    return null;
   }
 
   return (
-    <div className="mt-4 overflow-hidden rounded-xl border-2 border-gold bg-parchment">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="flex w-full items-center justify-between bg-gold/15 px-4 py-3 text-left"
-      >
-        <span className="font-display text-base text-navy">✓ Source &amp; Clause</span>
-        <span className="text-xs font-semibold uppercase tracking-widest text-navy/60">
-          {open ? "Hide" : "Show"}
-        </span>
-      </button>
-      {open && (
-        <div className="space-y-4 px-4 py-4">
-          {sources.map((s) => (
-            <article
-              key={`${s.policy_id}-${s.clause_number}`}
-              className="border-t border-gold/30 pt-3 first:border-t-0 first:pt-0"
-            >
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-display text-lg leading-snug text-navy">{s.policy_title}</p>
-                {s.source_type && (
-                  <span
-                    className={`inline-block rounded-full px-2.5 py-0.5 text-[11px] font-bold tracking-wide ${
-                      s.source_type === "REGULATION"
-                        ? "bg-purple-100 text-purple-800 border border-purple-300"
-                        : s.source_type === "OFFICIAL_VIGNAN"
-                          ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                          : s.source_type === "CIRCULAR"
-                            ? "bg-amber-100 text-amber-800 border border-amber-300"
-                            : "bg-blue-100 text-blue-800 border border-blue-300"
-                    }`}
-                  >
-                    {s.source_type === "OFFICIAL_VIGNAN" ? "OFFICIAL VIGNAN" : s.source_type.replace("_", " ")}
-                  </span>
-                )}
+    <div className="mt-4 space-y-3">
+      {sources.map((s, idx) => {
+        const isExpanded = expandedClauseIndex === idx;
+        return (
+          <div
+            key={`${s.policy_id}-${s.clause_number}-${idx}`}
+            className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all"
+          >
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="text-base">📄</span>
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-500">Source Verification</span>
+              </div>
+              {s.source_type && (
+                <span className="inline-block rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700 border border-emerald-200">
+                  {s.source_type === "OFFICIAL_VIGNAN" ? "OFFICIAL VIGNAN" : s.source_type.replace("_", " ")}
+                </span>
+              )}
+            </div>
+
+            <div className="mt-3 space-y-1 text-sm text-slate-700">
+              <div className="flex items-baseline gap-2">
+                <span className="w-20 shrink-0 text-xs font-semibold uppercase text-slate-400">Policy:</span>
+                <span className="font-semibold text-slate-900">{s.policy_title}</span>
               </div>
 
-              {(s.hierarchy_path || s.section) && (
-                <p className="mt-1 text-sm font-medium text-navy/80">
-                  {s.hierarchy_path ? s.hierarchy_path : `Section: ${s.section}`}
-                  {s.page_number != null ? ` · Page ${s.page_number}` : ""}
-                </p>
+              {s.section && (
+                <div className="flex items-baseline gap-2">
+                  <span className="w-20 shrink-0 text-xs font-semibold uppercase text-slate-400">Section:</span>
+                  <span className="font-medium text-slate-800">{s.section}</span>
+                </div>
               )}
-              <dl className="mt-3 grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Clause</dt>
-                  <dd className="font-semibold">{s.clause_number}</dd>
+
+              {s.clause_number && (
+                <div className="flex items-baseline gap-2">
+                  <span className="w-20 shrink-0 text-xs font-semibold uppercase text-slate-400">Clause:</span>
+                  <span className="font-medium text-slate-800">{s.clause_number}</span>
                 </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Version / Regulation</dt>
-                  <dd className="font-semibold">{s.regulation ?? s.version_label ?? s.version_year}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Page</dt>
-                  <dd className="font-semibold">{s.page_number != null ? `p. ${s.page_number}` : "Document"}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Authority</dt>
-                  <dd className="font-semibold capitalize">{s.authority_level}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Effective</dt>
-                  <dd className="font-semibold">{s.effective_date}</dd>
-                </div>
-                <div>
-                  <dt className="text-[11px] uppercase tracking-wide text-muted">Status</dt>
-                  <dd className="font-semibold uppercase">
-                    {s.status === "active" ? "CURRENT" : s.status.replace("_", " ")}
-                  </dd>
-                </div>
-              </dl>
-              {detailed !== false && (
-                <p className="mt-3 rounded-lg bg-white/80 p-3 text-sm leading-relaxed text-navy/90">
-                  {s.clause_text}
-                </p>
               )}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <Link to={`/app/policies/${s.policy_id}`} className="ui-btn ui-btn-ghost text-xs">
-                  View Document
-                </Link>
-                <Link
-                  to={`/app/policies/${s.policy_id}#clause-${s.clause_number}`}
-                  className="ui-btn ui-btn-ghost text-xs"
-                >
-                  View Clause
-                </Link>
-                {s.source_url && (
+
+              {s.page_number != null && (
+                <div className="flex items-baseline gap-2">
+                  <span className="w-20 shrink-0 text-xs font-semibold uppercase text-slate-400">Page:</span>
+                  <span className="font-medium text-slate-800">{s.page_number}</span>
+                </div>
+              )}
+
+              {s.source_url && (
+                <div className="flex items-baseline gap-2 pt-1">
+                  <span className="w-20 shrink-0 text-xs font-semibold uppercase text-slate-400">Official URL:</span>
                   <a
                     href={s.source_url}
                     target="_blank"
                     rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-crimson hover:underline"
+                    className="truncate text-xs font-medium text-blue-600 hover:underline"
                   >
-                    Official URL (vignan.ac.in) ↗
+                    {s.source_url} ↗
                   </a>
-                )}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-3 pt-2 border-t border-slate-100 flex items-center justify-between">
+              <button
+                type="button"
+                onClick={() => setExpandedClauseIndex(isExpanded ? null : idx)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-slate-300 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-800 hover:bg-slate-100 transition-colors"
+              >
+                <span>{isExpanded ? "▲ Hide Relevant Clause" : "🔍 View Relevant Clause"}</span>
+              </button>
+              <span className="text-[11px] text-slate-400">
+                {s.regulation ? `Reg: ${s.regulation}` : s.effective_date ? `Eff: ${s.effective_date}` : ""}
+              </span>
+            </div>
+
+            {isExpanded && (
+              <div className="mt-3 rounded-lg bg-slate-50 p-3.5 text-xs leading-relaxed text-slate-800 border border-slate-200 animate-fadeIn">
+                <p className="font-semibold text-slate-600 mb-1 text-[11px] uppercase tracking-wider">
+                  Retrieved Official Clause Excerpt:
+                </p>
+                <p className="whitespace-pre-wrap font-sans text-slate-800">{s.clause_text}</p>
               </div>
-            </article>
-          ))}
-        </div>
-      )}
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

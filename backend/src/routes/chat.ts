@@ -41,6 +41,10 @@ chatRouter.post("/", requireAuth, async (req, res) => {
       logs: result.logs,
       as_of_date: result.as_of_date,
       as_of_source: result.as_of_source,
+      is_out_of_scope: result.is_out_of_scope ?? false,
+      not_found: result.not_found ?? false,
+      warning_title: result.warning_title,
+      warning_message: result.warning_message,
     });
   } catch (err) {
     console.error(err);

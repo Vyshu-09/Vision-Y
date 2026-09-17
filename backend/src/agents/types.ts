@@ -154,6 +154,10 @@ export interface PipelineOutput {
   logs: PipelineLogEntry[];
   as_of_date: string;
   as_of_source: AsOfSource;
+  is_out_of_scope?: boolean;
+  not_found?: boolean;
+  warning_title?: string;
+  warning_message?: string;
 }
 
 export function toCandidate(policy: Policy, clause: PolicyClause, score: number): CandidateClause {

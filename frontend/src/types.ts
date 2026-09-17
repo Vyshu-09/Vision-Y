@@ -66,6 +66,10 @@ export interface ChatResponse {
   logs?: { stage: string; timestamp: string; output: unknown }[];
   as_of_date?: string;
   as_of_source?: "parsed" | "explicit" | "default";
+  is_out_of_scope?: boolean;
+  not_found?: boolean;
+  warning_title?: string;
+  warning_message?: string;
 }
 
 export interface PolicyRow {

@@ -270,6 +270,228 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
         }),
       );
     }
+
+    // 6. Admission Policy fixture (refund & cancellation)
+    if (!store.listPolicies().some((p) => p.id === "test-adm-pol")) {
+      const admPol = normalizePolicy({
+        id: "test-adm-pol",
+        family_id: "ADMISSION_POLICY",
+        title: "Admission Policy",
+        category: "Admissions",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/pdf/Admission_Policy%20and%20procedure.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["student", "faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(admPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-adm-clause-1",
+          policy_id: admPol.id,
+          clause_number: "3.1",
+          clause_text: "Students can cancel their admission before commencement of class work and receive a refund of the tuition fee, subject to the university's applicable cancellation rules.",
+          section: "Fee Refund and Cancellation Norms",
+          page_number: 4,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/Admission_Policy%20and%20procedure.pdf",
+          embedding_vector: embedText("refund policy for admission cancellation tuition fee refund norms"),
+        }),
+      );
+    }
+
+    // 7. Research Policy fixture
+    if (!store.listPolicies().some((p) => p.id === "test-res-pol")) {
+      const resPol = normalizePolicy({
+        id: "test-res-pol",
+        family_id: "RESEARCH_POLICY",
+        title: "Research Policy",
+        category: "Research",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/pdf/University%20Research%20Policy.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["student", "faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(resPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-res-clause-1",
+          policy_id: resPol.id,
+          clause_number: "1.1",
+          clause_text: "Vignan University research policy encourages ethical research, provides seed money grants to faculty, and offers incentives for SCI and Scopus journal publications.",
+          section: "Research Guidelines and Support",
+          page_number: 2,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/University%20Research%20Policy.pdf",
+          embedding_vector: embedText("research policy seed money publications ethics guidelines"),
+        }),
+      );
+    }
+
+    // 8. Industrial Training Policy fixture
+    if (!store.listPolicies().some((p) => p.id === "test-ind-pol")) {
+      const indPol = normalizePolicy({
+        id: "test-ind-pol",
+        family_id: "INDUSTRIAL_TRAINING",
+        title: "Industrial Training Policy",
+        category: "Academics",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/pdf/INDUSTRIAL%20TRAINING%20POLICY.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["student", "faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(indPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-ind-clause-1",
+          policy_id: indPol.id,
+          clause_number: "2.1",
+          clause_text: "Students must complete mandatory industrial training and internships with approved industrial partners to acquire industry readiness.",
+          section: "Industrial Training and Internship Guidelines",
+          page_number: 2,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/INDUSTRIAL%20TRAINING%20POLICY.pdf",
+          embedding_vector: embedText("rules for industrial training internships industry partners"),
+        }),
+      );
+    }
+
+    // 9. Consultancy Policy fixture
+    if (!store.listPolicies().some((p) => p.id === "test-cons-pol")) {
+      const consPol = normalizePolicy({
+        id: "test-cons-pol",
+        family_id: "CONSULTANCY_POLICY",
+        title: "Consultancy Policy",
+        category: "Research",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/pdf/Consultancy%20Policy.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["student", "faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(consPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-cons-clause-1",
+          policy_id: consPol.id,
+          clause_number: "2.1",
+          clause_text: "Under the consultancy policy, faculty members can offer technical advisory and testing services with revenue shared in 60:40 or 70:30 ratios.",
+          section: "Consultancy Revenue Sharing and Advisory",
+          page_number: 3,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/Consultancy%20Policy.pdf",
+          embedding_vector: embedText("covered under consultancy policy technical advisory testing revenue sharing"),
+        }),
+      );
+    }
+
+    // 10. Code of Conduct for Faculty fixture
+    if (!store.listPolicies().some((p) => p.id === "test-fac-coc-pol")) {
+      const facPol = normalizePolicy({
+        id: "test-fac-coc-pol",
+        family_id: "FACULTY_CONDUCT",
+        title: "Code of Conduct for Faculty",
+        category: "Faculty Affairs",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/pdf/Code_of_Conduct_faculty.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(facPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-fac-coc-clause-1",
+          policy_id: facPol.id,
+          clause_number: "1.1",
+          clause_text: "Faculty code of conduct requires teaching excellence, academic honesty, punctual attendance, professional integrity, and mentorship of students.",
+          section: "Faculty Code of Conduct and Ethics",
+          page_number: 1,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/pdf/Code_of_Conduct_faculty.pdf",
+          embedding_vector: embedText("faculty code of conduct rules academic integrity professional ethics mentorship"),
+        }),
+      );
+    }
+
+    // 11. IT Policy fixture
+    if (!store.listPolicies().some((p) => p.id === "test-it-pol")) {
+      const itPol = normalizePolicy({
+        id: "test-it-pol",
+        family_id: "IT_POLICY",
+        title: "IT Policy",
+        category: "IT",
+        version_year: 2025,
+        version_label: "2025",
+        effective_date: "2025-01-01",
+        effective_until: null,
+        status: "active",
+        source_type: "OFFICIAL_VIGNAN",
+        document_type: "POLICY",
+        source_url: "https://vignan.ac.in/naacdownload/IT-Policy.pdf",
+        authority_level: "university",
+        department: null,
+        audience: ["student", "faculty", "staff", "super_admin"],
+        uploaded_by: "vignan-sync",
+      });
+      store.insertPolicy(itPol);
+      store.insertClause(
+        normalizeClause({
+          id: "test-it-clause-1",
+          policy_id: itPol.id,
+          clause_number: "1.1",
+          clause_text: "The IT policy establishes guidelines for authorized campus Wi-Fi access, endpoint cybersecurity protection, licensed software usage, and data confidentiality.",
+          section: "IT Acceptable Use and Cybersecurity",
+          page_number: 1,
+          source_type: "OFFICIAL_VIGNAN",
+          document_type: "POLICY",
+          source_url: "https://vignan.ac.in/naacdownload/IT-Policy.pdf",
+          embedding_vector: embedText("it policy campus wifi cybersecurity licensed software acceptable use"),
+        }),
+      );
+    }
   }
 
   ensureTestFixtures();
@@ -560,5 +782,83 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
     assert.ok(res.answer_text.includes("75%") || res.answer_text.includes("75"), "Answer must contain 75% attendance requirement");
     const r26Source = res.sources.find((s) => s.regulation === "R26" || s.policy_title.includes("R26"));
     assert.ok(r26Source, "Must cite R26 regulation as source");
+  });
+
+  it("15. Scope Enforcement: rejects questions about other universities (IIT / JNTU)", async () => {
+    const iitRes = await runPolicyPipeline({
+      question: "What is IIT Bombay's admission policy?",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(iitRes.is_out_of_scope, true, "Must flag IIT as out of scope");
+    assert.ok(iitRes.answer_text.includes("Outside Policy Scope"), "Must display Outside Policy Scope warning");
+    assert.equal(iitRes.sources.length, 0, "No sources on out of scope query");
+
+    const jntuRes = await runPolicyPipeline({
+      question: "What is JNTU attendance policy?",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(jntuRes.is_out_of_scope, true, "Must flag JNTU as out of scope");
+    assert.ok(jntuRes.answer_text.includes("Outside Policy Scope"), "Must display Outside Policy Scope warning");
+
+    const otherUnivRes = await runPolicyPipeline({
+      question: "Tell me about another university.",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(otherUnivRes.is_out_of_scope, true, "Must flag another university as out of scope");
+  });
+
+  it("16. Scope Enforcement: rejects non-policy general trivia, coding, and weather", async () => {
+    const pmRes = await runPolicyPipeline({
+      question: "Who is the Prime Minister?",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(pmRes.is_out_of_scope, true, "Must flag Prime Minister as out of scope");
+    assert.ok(pmRes.answer_text.includes("Outside Policy Scope"));
+
+    const codeRes = await runPolicyPipeline({
+      question: "Write a Python program.",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(codeRes.is_out_of_scope, true, "Must flag coding request as out of scope");
+
+    const weatherRes = await runPolicyPipeline({
+      question: "What is the weather today?",
+      role: "student",
+      userId: "test-student-id",
+    });
+    assert.equal(weatherRes.is_out_of_scope, true, "Must flag weather as out of scope");
+  });
+
+  it("17. Official Vignan Policy Grounded Queries: Answers valid policy queries with source citations", async () => {
+    const queries = [
+      { q: "What is the refund policy for admission cancellation?", expectedInAnswer: "admission" },
+      { q: "What does the research policy say?", expectedInAnswer: "research" },
+      { q: "What are the rules for industrial training?", expectedInAnswer: "training" },
+      { q: "What is covered under the consultancy policy?", expectedInAnswer: "consultancy" },
+      { q: "What is the student grievance procedure?", expectedInAnswer: "grievance" },
+      { q: "What are the faculty code of conduct rules?", expectedInAnswer: "conduct" },
+      { q: "What does the IT policy say?", expectedInAnswer: "it" },
+    ];
+
+    for (const item of queries) {
+      const res = await runPolicyPipeline({
+        question: item.q,
+        role: "super_admin",
+        userId: "test-admin-id",
+      });
+
+      assert.equal(res.is_out_of_scope ?? false, false, `Query "${item.q}" must be within scope`);
+      assert.ok(res.sources.length > 0, `Query "${item.q}" must return official source citations`);
+      assert.ok(res.answer_text.length > 15, `Query "${item.q}" must have non-empty grounded answer`);
+      assert.ok(
+        res.sources[0].source_url?.includes("vignan.ac.in"),
+        `Source for "${item.q}" must point to official vignan.ac.in URL`,
+      );
+    }
   });
 });

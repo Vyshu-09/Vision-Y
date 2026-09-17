@@ -8,6 +8,13 @@ import { runConflictAgent } from "./conflictAgent.js";
 import { runGovernanceAgent } from "./governanceAgent.js";
 import { runPolicySearchAgent } from "./policySearchAgent.js";
 import { runVersionAgent } from "./versionAgent.js";
+import {
+  checkPolicyScope,
+  NOT_FOUND_MESSAGE,
+  NOT_FOUND_TITLE,
+  OUT_OF_SCOPE_MESSAGE,
+  OUT_OF_SCOPE_TITLE,
+} from "./scopeAgent.js";
 import type { PipelineInput, PipelineLogEntry, PipelineOutput } from "./types.js";
 
 function log(stage: string, output: unknown): PipelineLogEntry {
@@ -23,10 +30,39 @@ function log(stage: string, output: unknown): PipelineLogEntry {
 }
 
 /**
- * Orchestration: Ambiguity → Search → Version → Conflict → Governance → Answer
+ * Orchestration: Scope Detection → Ambiguity → Search → Version → Conflict → Governance → Answer
  */
 export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineOutput> {
   const logs: PipelineLogEntry[] = [];
+  const defaultAsOfDate =
+    input.as_of_date && /^\d{4}-\d{2}-\d{2}$/.test(input.as_of_date)
+      ? input.as_of_date
+      : new Date().toISOString().slice(0, 10);
+  const defaultAsOfSource = input.as_of_date ? "explicit" : "default";
+
+  // Stage 0: Strict Scope Detection (Reject non-Vignan / unrelated questions without LLM call)
+  const scope = checkPolicyScope(input.question);
+  logs.push(log("scope_check", scope));
+
+  if (!scope.in_scope || scope.is_out_of_scope) {
+    const warningText = `⚠️ ${OUT_OF_SCOPE_TITLE}\n\n${OUT_OF_SCOPE_MESSAGE}`;
+    return {
+      answer_text: warningText,
+      sources: [],
+      low_confidence: false,
+      escalated: false,
+      flagged_for_admin: false,
+      needs_clarification: false,
+      clarification_prompt: null,
+      clarification_options: [],
+      logs,
+      as_of_date: defaultAsOfDate,
+      as_of_source: defaultAsOfSource,
+      is_out_of_scope: true,
+      warning_title: OUT_OF_SCOPE_TITLE,
+      warning_message: OUT_OF_SCOPE_MESSAGE,
+    };
+  }
 
   const ambiguity = runAmbiguityAgent(input.question);
   logs.push(log("ambiguity", ambiguity));
@@ -48,10 +84,8 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
       clarification_prompt: ambiguity.prompt,
       clarification_options: ambiguity.options,
       logs,
-      as_of_date: input.as_of_date && /^\d{4}-\d{2}-\d{2}$/.test(input.as_of_date)
-        ? input.as_of_date
-        : new Date().toISOString().slice(0, 10),
-      as_of_source: input.as_of_date ? "explicit" : "default",
+      as_of_date: defaultAsOfDate,
+      as_of_source: defaultAsOfSource,
     };
   }
 
@@ -158,11 +192,42 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
     const sources = pair
       ? [candidateToSource(pair.a), candidateToSource(pair.b)]
       : [];
+    if (!conflicts.conflict && !governed.applicable_clause) {
+      const answer_text =
+        "The available Vignan University policy and regulation documents do not establish an authoritative answer to this question.\n\n" +
+        `ℹ️ ${NOT_FOUND_TITLE}\n\n${NOT_FOUND_MESSAGE}`;
+      const query = store.insertQuery({
+        id: store.newId(),
+        user_id: input.userId,
+        question_text: input.question,
+        answer_text,
+        sources: [],
+        created_at: store.now(),
+      });
+      return {
+        answer_text,
+        sources: [],
+        low_confidence: true,
+        escalated: true,
+        flagged_for_admin: false,
+        needs_clarification: false,
+        clarification_prompt: null,
+        clarification_options: [],
+        logs,
+        as_of_date,
+        as_of_source,
+        not_found: true,
+        warning_title: NOT_FOUND_TITLE,
+        warning_message: NOT_FOUND_MESSAGE,
+      };
+    }
+
     const answer_text = conflicts.conflict
       ? "A conflict was detected between active university policies that apply to this question. " +
         "Administrative clarification is required before a definitive answer can be given. " +
         (pair ? `Conflict: ${pair.description}` : governed.rationale)
-      : "The available university policy documents do not establish an authoritative answer to this question.";
+      : "The available Vignan University policy and regulation documents do not establish an authoritative answer to this question.\n\n" +
+        `ℹ️ ${NOT_FOUND_TITLE}\n\n${NOT_FOUND_MESSAGE}`;
 
     if (conflicts.conflict) {
       store.insertFlag({
@@ -204,6 +269,9 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
       logs,
       as_of_date,
       as_of_source,
+      not_found: !conflicts.conflict,
+      warning_title: conflicts.conflict ? undefined : NOT_FOUND_TITLE,
+      warning_message: conflicts.conflict ? undefined : NOT_FOUND_MESSAGE,
     };
   }
 
@@ -230,16 +298,44 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
   });
   logs.push(log("answer", { low_confidence: answered.low_confidence, sources: answered.sources }));
 
-  const flagged_for_admin = answered.low_confidence || governed.escalated;
+  if (answered.low_confidence) {
+    const answer_text =
+      "The available Vignan University policy and regulation documents do not establish an authoritative answer to this question.\n\n" +
+      `ℹ️ ${NOT_FOUND_TITLE}\n\n${NOT_FOUND_MESSAGE}`;
+    store.insertQuery({
+      id: store.newId(),
+      user_id: input.userId,
+      question_text: input.question,
+      answer_text,
+      sources: [],
+      created_at: store.now(),
+    });
+    return {
+      answer_text,
+      sources: [],
+      low_confidence: true,
+      escalated: true,
+      flagged_for_admin: false,
+      needs_clarification: false,
+      clarification_prompt: null,
+      clarification_options: [],
+      logs,
+      as_of_date,
+      as_of_source,
+      not_found: true,
+      warning_title: NOT_FOUND_TITLE,
+      warning_message: NOT_FOUND_MESSAGE,
+    };
+  }
+
+  const flagged_for_admin = governed.escalated;
   if (flagged_for_admin) {
     store.insertFlag({
       id: store.newId(),
       raised_by: input.userId,
       policy_id: governed.applicable_clause?.policy_id ?? null,
       query_id: null,
-      reason: governed.escalated
-        ? `Pipeline escalation: ${governed.rationale}`
-        : "Low-confidence answer — no sufficiently similar active clause.",
+      reason: `Pipeline escalation: ${governed.rationale}`,
       status: "open",
       resolution_notes: null,
       created_at: store.now(),
@@ -273,7 +369,7 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
   return {
     answer_text: answered.answer_text,
     sources: answered.sources,
-    low_confidence: answered.low_confidence,
+    low_confidence: false,
     escalated: governed.escalated,
     flagged_for_admin,
     needs_clarification: false,
@@ -282,5 +378,7 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
     logs,
     as_of_date,
     as_of_source,
+    not_found: false,
+    is_out_of_scope: false,
   };
 }

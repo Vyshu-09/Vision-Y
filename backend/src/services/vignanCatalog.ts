@@ -15,6 +15,7 @@ export interface VignanCatalogEntry {
   program?: string;
   effective_date?: string;
   effective_until?: string | null;
+  official_text?: string;
 }
 
 const ALL: Role[] = ["student", "faculty", "staff", "super_admin"];
@@ -152,6 +153,30 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Ethical research, funding, and dissemination guidelines.",
     pdf_url: "https://vignan.ac.in/pdf/University%20Research%20Policy.pdf",
     audience: FACULTY,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+UNIVERSITY RESEARCH POLICY & GUIDELINES
+
+Section 1: Objectives and Scope of Research
+Clause 1.1: Research Promotion and Seed Money
+Vignan University actively encourages and supports research activities across all departments. The university provides seed grants to newly recruited and active faculty members to initiate innovative research projects, proof-of-concepts, and experimental investigations.
+
+Clause 1.2: Centers of Excellence and Facilities
+The university establishes and maintains state-of-the-art Centers of Excellence (CoE), central instrumentation facilities, and interdisciplinary laboratories to facilitate advanced research in artificial intelligence, biotechnology, materials science, and energy systems.
+
+Section 2: Research Publication and Financial Incentives
+Clause 2.1: Journal Publication Incentives
+Faculty members and research scholars who publish papers in peer-reviewed journals indexed in Web of Science (SCI/SCIE) and Scopus receive financial incentives, awards, and full reimbursement of journal publication processing charges based on journal impact factor.
+
+Clause 2.2: Conference Travel Support
+The university provides financial assistance and on-duty leave to faculty members and scholars presenting accepted research papers at reputed national and international conferences.
+
+Section 3: Intellectual Property and Patenting
+Clause 3.1: Patent Filing Assistance and Funding
+Vignan University fully finances the drafting, filing, examination, and maintenance of patents resulting from university research. Royalties and commercialization proceeds are shared between the inventors and the university according to the IP policy.
+
+Section 4: Academic Integrity and Anti-Plagiarism
+Clause 4.1: Research Ethics and Integrity Standards
+All dissertations, theses, project reports, and manuscripts must comply with strict academic integrity guidelines. Similarity index must not exceed 10% (excluding bibliography) as per UGC anti-plagiarism regulations.`,
   },
   {
     title: "Consultancy Policy",
@@ -159,6 +184,26 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Faculty consultancy and industry collaboration procedures.",
     pdf_url: "https://vignan.ac.in/pdf/Consultancy%20Policy.pdf",
     audience: FACULTY,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+INDUSTRIAL CONSULTANCY AND TECHNICAL ADVISORY POLICY
+
+Section 1: Scope and Types of Consultancy
+Clause 1.1: Permitted Consultancy Categories
+Faculty members are encouraged to offer technical consultancy, testing services, and advisory solutions to industry and government agencies. Consultancy projects are categorized into Institutional Consultancy (using university lab facilities) and Expert Advisory Consultancy.
+
+Section 2: Revenue Sharing Framework
+Clause 2.1: Institutional Consultancy Sharing Ratio
+For consultancy projects utilizing university laboratories, equipment, and compute infrastructure, net revenue (after deducting operational costs and taxes) is distributed in the ratio of 60% to the project team / investigators and 40% to the University.
+
+Clause 2.2: Advisory Consultancy Sharing Ratio
+For advisory consultancy utilizing faculty expertise without university lab resources, net revenue is distributed in the ratio of 70% to the consultant faculty and 30% to the University.
+
+Section 3: Time Commitment and Prior Approval
+Clause 3.1: Permitted Time Allocation
+Faculty members may devote up to one working day per week (up to 52 days per calendar year) for consultancy assignments without disrupting assigned teaching schedules and academic responsibilities.
+
+Clause 3.2: Sanction and Approval Procedure
+All consultancy agreements, proposals, and non-disclosure agreements must receive prior written approval from the Dean (Research & Development) and the Vice-Chancellor before execution.`,
   },
   {
     title: "Paternity Leaves Policy",
@@ -173,6 +218,20 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Budgeting, expenditure, and audit guidelines.",
     pdf_url: "https://vignan.ac.in/pdf/Financial%20Policy.pdf",
     audience: STAFF,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+FINANCIAL MANAGEMENT AND BUDGETARY CONTROL POLICY
+
+Section 1: Budget Formulation and Planning
+Clause 1.1: Annual Departmental Budgets
+Every academic department and administrative section prepares annual budget proposals prior to each financial year. The consolidated university budget is evaluated by the Finance Committee and placed before the Board of Management for final approval.
+
+Section 2: Financial Powers and Sanctions
+Clause 2.1: Delegation of Financial Authority
+Heads of Departments, Deans, Registrar, Finance Officer, and Vice-Chancellor are delegated specific financial sanction limits for recurring and non-recurring expenditures to maintain operational efficiency.
+
+Section 3: Accounting and Audit
+Clause 3.1: Internal and Statutory Audits
+The university maintains financial books following recognized accounting standards. Quarterly internal audits and annual statutory audits by independent Chartered Accountants ensure transparency and regulatory compliance.`,
   },
   {
     title: "Maintenance Policy",
@@ -187,6 +246,26 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Appropriate use, security, and management of IT resources.",
     pdf_url: "https://vignan.ac.in/naacdownload/IT-Policy.pdf",
     audience: ALL,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+CAMPUS IT INFRASTRUCTURE & ACCEPTABLE USE POLICY
+
+Section 1: Acceptable Network and Computing Use
+Clause 1.1: User Accounts and Campus Wi-Fi Access
+Every enrolled student, faculty, and staff member is issued official login credentials for campus network and Wi-Fi access. Users are strictly responsible for maintaining credential secrecy and preventing unauthorized account sharing.
+
+Clause 1.2: Permissible Internet Usage
+Campus network and internet bandwidth are dedicated to academic, research, and official administrative purposes. Accessing unauthorized websites, streaming entertainment during class hours, and bandwidth abuse are prohibited.
+
+Section 2: Software Licensing and Cybersecurity
+Clause 2.1: Software Licensing and Anti-Piracy
+Only legally licensed or authorized open-source software may be installed on university systems. Installation of pirated or unapproved software is strictly prohibited.
+
+Clause 2.2: Cybersecurity and System Integrity
+All devices connected to the campus intranet must run updated antivirus software and security configurations. Users must not bypass firewalls or attempt unauthorized network penetration.
+
+Section 3: Data Protection and Privacy
+Clause 3.1: Protection of Confidential University Data
+Student records, examination databases, and institutional information must remain confidential and protected from unauthorized access or external leakage.`,
   },
   {
     title: "Cybersecurity & Data Governance Policy",
@@ -201,6 +280,16 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Strategies to secure and optimize university resources.",
     pdf_url: "https://vignan.ac.in/pdf/Resource%20Mobilization%20Policy.pdf",
     audience: STAFF,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+RESOURCE MOBILISATION & FUND MANAGEMENT POLICY
+
+Section 1: Mobilisation of Institutional Resources
+Clause 1.1: Revenue Diversification
+VFSTR mobilizes financial resources from student tuition and academic fees, government funding agencies (DST, SERB, AICTE, UGC), industry research partnerships, consultancy services, CSR contributions, and alumni endowments.
+
+Section 2: Corpus Fund and Strategic Allocation
+Clause 2.1: Corpus Fund and Resource Optimization
+A dedicated university Corpus Fund is maintained to fund scholarships, state-of-the-art laboratory expansion, and long-term institutional development with rigorous monitoring by the Finance Committee.`,
   },
   {
     title: "E-Governance Policy",
@@ -236,6 +325,19 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Gender fairness and inclusive campus culture.",
     pdf_url: "https://vignan.ac.in/pdf/Gender%20Equity%20Policy.pdf",
     audience: ALL,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+GENDER EQUITY & EQUAL OPPORTUNITY POLICY
+
+Section 1: Gender Equality and Inclusive Campus
+Clause 1.1: Commitment to Equal Opportunity
+Vignan University provides an inclusive, safe, and supportive campus environment ensuring non-discrimination and equal opportunity for all genders in admissions, recruitment, academic pursuits, and leadership.
+
+Section 2: Grievance Redressal and Prevention of Harassment
+Clause 2.1: Internal Complaints Committee (ICC)
+The university maintains an active Internal Complaints Committee (ICC) constituted under UGC guidelines and the POSH Act to handle any complaints of gender discrimination or sexual harassment with strict confidentiality and prompt resolution.
+
+Clause 2.2: Safety and Facilities for Women
+The university provides 24/7 security surveillance, safe campus transport, dedicated women's common rooms, and mentoring support systems.`,
   },
   {
     title: "Access and Participation Plan for Women",
@@ -271,6 +373,15 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Equitable access and reservation compliance.",
     pdf_url: "https://vignan.ac.in/naacdownload/Reservation%20Policy.pdf",
     audience: STUDENT,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+STATUTORY RESERVATION AND ADMISSIONS POLICY
+
+Section 1: Statutory Reservation Guidelines
+Clause 1.1: Quotas and Categories
+Vignan University strictly complies with statutory reservation policies prescribed by the Government of India and UGC for admissions to undergraduate and postgraduate programs, including quotas for SC, ST, OBC-NCL, EWS, and Persons with Disabilities.
+
+Clause 1.2: Verification and Eligibility
+Candidates seeking admission under reserved categories must present valid caste/category certificates issued by competent authorities at the time of admission verification.`,
   },
   {
     title: "Divyangjan Policy",
@@ -278,6 +389,16 @@ export const VIGNAN_POLICY_CATALOG: VignanCatalogEntry[] = [
     description: "Accessibility and inclusion for persons with disabilities.",
     pdf_url: "https://vignan.ac.in/pdf/Policy%20on%20Divyangjan.pdf",
     audience: ALL,
+    official_text: `VIGNAN'S FOUNDATION FOR SCIENCE, TECHNOLOGY AND RESEARCH (Deemed to be University)
+POLICY FOR PERSONS WITH DISABILITIES (DIVYANGJAN POLICY)
+
+Section 1: Campus Infrastructure Accessibility
+Clause 1.1: Barrier-Free Campus Environment
+Vignan University ensures barrier-free access across all academic blocks, hostels, libraries, and administrative buildings with ramps, tactile paths, dedicated elevators, and disabled-friendly restrooms.
+
+Section 2: Academic and Examination Support
+Clause 2.1: Assistive Technologies and Scribe Facilities
+The central library and computer centers provide screen reader software and assistive aids. Divyangjan students are granted compensatory examination time and scribe assistance in accordance with UGC and government guidelines.`,
   },
   {
     title: "Lifelong Learning Access Policy",

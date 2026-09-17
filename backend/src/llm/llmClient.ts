@@ -61,19 +61,26 @@ function mockComplete(messages: ChatMessage[]): string {
     blob.includes("answer_request") ||
     blob.includes("applicable clause") ||
     blob.includes("agent 53") ||
+    blob.includes("policy assistant") ||
+    blob.includes("unipolicy") ||
+    blob.includes("retrieved policy content") ||
     blob.includes("authoritative document") ||
+    blob.includes("authoritative policy") ||
     blob.includes("clause")
   ) {
     let clauseText = "";
+    const clauseMatch0 = user.match(
+      /Retrieved Policy Content:\n([\s\S]+?)(?:\n\nRelated official circulars|\n\nProvide a concise|\nDetail level:|\nSource URL:|$)/i,
+    );
     const clauseMatch1 = user.match(
-      /Applicable clause[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\nDetail level:|\nSource URL:|$)/i,
+      /Applicable clause[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\n\nProvide a concise|\nDetail level:|\nSource URL:|$)/i,
     );
     const clauseMatch2 = user.match(
-      /Clause\s+[\d.]+[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\nDetail level:|\nSource URL:|$)/i,
+      /Clause\s+[\d.]+[^\n]*:\n([\s\S]+?)(?:\n\nRelated official circulars|\n\nProvide a concise|\nDetail level:|\nSource URL:|$)/i,
     );
-    clauseText = (clauseMatch1?.[1] || clauseMatch2?.[1] || "").trim();
+    clauseText = (clauseMatch0?.[1] || clauseMatch1?.[1] || clauseMatch2?.[1] || "").trim();
 
-    const circMatch = user.match(/Related official circulars[\s\S]*?:\n([\s\S]+?)(?:\nDetail level:|\nSource URL:|$)/i);
+    const circMatch = user.match(/Related official circulars[\s\S]*?:\n([\s\S]+?)(?:\n\nProvide a concise|\nDetail level:|\nSource URL:|$)/i);
     const circText = circMatch?.[1]?.trim() ?? "";
 
     let circularNote = "";
@@ -81,29 +88,18 @@ function mockComplete(messages: ChatMessage[]): string {
       const lines = circText.split("\n").map((l) => l.trim()).filter(Boolean);
       const firstLine = lines.find((l) => l.startsWith("-")) ?? lines[0];
       if (firstLine) {
-        circularNote = ` Related circular guidance: ${firstLine.replace(/^-+\s*/, "").trim()}`;
-      }
-      const detailLine = lines.find((l) => !l.startsWith("-"));
-      if (detailLine) {
-        circularNote += ` ${detailLine}`;
+        circularNote = ` Also note ${firstLine.replace(/^-+\s*/, "").trim()}.`;
       }
     }
 
     if (clauseText) {
-      if (/condon|fee|attendance/i.test(user) || /condon|fee|attendance/i.test(clauseText)) {
-        return (
-          `According to the authoritative document clause: ${clauseText.slice(0, 300)}${clauseText.length > 300 ? "…" : ""}` +
-          (circularNote || " Check any linked circular for fee amounts and application routing.")
-        );
-      }
       return (
-        `According to the official clause: ${clauseText.slice(0, 300)}${clauseText.length > 300 ? "…" : ""}` +
+        `According to Vignan University policy: ${clauseText.slice(0, 320)}${clauseText.length > 320 ? "…" : ""}` +
         circularNote
       );
     }
     return (
-      "Based on the cited official documents, please see the Source & Clause card for the exact rule. " +
-      "If a circular modifies the policy, that circular takes effect for the clarified detail (fee, timeline, or procedure)."
+      "Based on the official Vignan University policy documents, please refer to the verified Source Card for specific clauses and conditions."
     );
   }
 

@@ -12,27 +12,19 @@ function fallbackAnswer(input: AnswerAgentInput): string {
   }
 
   const c = input.applicable_clause;
-  const detailed = input.role === "faculty" || input.role === "staff" || input.role === "super_admin";
-  const extra = detailed ? `\n\nFull clause ${c.clause_number}: ${c.clause_text}` : "";
+  const docLabel = c.document_type === "REGULATION"
+    ? `${c.policy_title} (${c.regulation ?? c.version_label ?? c.version_year})`
+    : `${c.policy_title}`;
 
   let circularNote = "";
   if (input.related_circulars?.length) {
     const circ = input.related_circulars[0];
-    circularNote =
-      `\n\nAlso note circular ${circ.circular_number} (${circ.issued_date}): ${circ.title}. ` +
-      `${circ.description}`;
+    circularNote = ` (Note: Circular ${circ.circular_number} provides additional guidance on ${circ.title.toLowerCase()}).`;
   }
 
-  const docLabel = c.document_type === "REGULATION"
-    ? `${c.policy_title} (${c.regulation ?? c.version_label ?? c.version_year})`
-    : `${c.policy_title} (${c.version_year})`;
-
+  // Generate concise 3-4 line grounded answer
   return (
-    `According to the authoritative ${docLabel}, clause ${c.clause_number} applies. ` +
-    `${c.clause_text} ` +
-    `This rule has been in effect since ${c.effective_date}.` +
-    circularNote +
-    extra
+    `According to Vignan University's ${docLabel} (${c.section || "Clause " + c.clause_number}), ${c.clause_text.trim()}${circularNote}`
   );
 }
 
@@ -52,20 +44,17 @@ export async function runAnswerAgent(input: AnswerAgentInput): Promise<AnswerAge
   }
 
   const clause = input.applicable_clause!;
-  const detailed = input.role === "faculty" || input.role === "staff" || input.role === "super_admin";
-  const related = detailed
-    ? input.related_clauses.filter(
-        (c) => !(c.policy_id === clause.policy_id && c.clause_number === clause.clause_number),
-      )
-    : [];
+  const related = input.related_clauses
+    .filter((c) => !(c.policy_id === clause.policy_id && c.clause_number === clause.clause_number))
+    .slice(0, 1);
 
   const circularBlock =
     input.related_circulars && input.related_circulars.length
-      ? `\n\nRelated official circulars (must be reflected if they modify or clarify the clause):\n` +
+      ? `\n\nRelated official circulars:\n` +
         input.related_circulars
           .map(
             (c) =>
-              `- ${c.circular_number} (${c.issued_date}): ${c.title}\n  ${c.description}`,
+              `- ${c.circular_number} (${c.issued_date}): ${c.title} — ${c.description}`,
           )
           .join("\n")
       : "";
@@ -74,47 +63,28 @@ export async function runAnswerAgent(input: AnswerAgentInput): Promise<AnswerAge
     {
       role: "system",
       content:
-        "You are Agent 53, Vignan University Policy and Regulation Agent.\n\n" +
-        "Answer ONLY from the authoritative evidence supplied by the retrieval pipeline.\n" +
-        "Never use general model knowledge to create university rules.\n" +
-        "Never invent:\n" +
-        "- policy numbers\n" +
-        "- clause numbers\n" +
-        "- attendance percentages\n" +
-        "- fees\n" +
-        "- deadlines\n" +
-        "- dates\n" +
-        "- authorities\n" +
-        "- procedures\n" +
-        "- exceptions\n\n" +
-        "If the retrieved authoritative documents do not establish an answer, explicitly say:\n" +
-        "'The available Vignan University policy and regulation documents do not establish an authoritative answer to this question.'\n\n" +
-        "If documents conflict and governance cannot resolve them, state that an administrative clarification is required.\n\n" +
-        "Always identify:\n" +
-        "- document title\n" +
-        "- document type\n" +
-        "- regulation/version\n" +
-        "- section/clause\n" +
-        "- page number when available\n" +
-        "- source URL\n" +
-        "- authority level\n\n" +
-        "Prefer exact clause wording for important numeric rules.",
+        "You are Vignan University's Policy Assistant (UniPolicy AI).\n\n" +
+        "CRITICAL INSTRUCTIONS:\n" +
+        "1. Answer ONLY using the retrieved official Vignan University policy content.\n" +
+        "2. Keep the answer SIMPLE, CLEAR, and within 3–4 lines (approximately 40–70 words).\n" +
+        "3. Use easy-to-understand language. Do NOT copy massive raw text or dump the entire policy.\n" +
+        "4. NEVER use general knowledge to invent rules, dates, percentages, penalties, or procedures.\n" +
+        "5. If the retrieved text does not contain sufficient information, state:\n" +
+        "   'The available Vignan University policy and regulation documents do not establish an authoritative answer to this question.'",
     },
     {
       role: "user",
       content:
-        `User Role: ${input.role}\nQuestion: ${input.question}\n` +
-        `Authoritative Document: ${clause.policy_title} [Type: ${clause.document_type ?? "POLICY"}, Reg/Ver: ${clause.regulation ?? clause.version_label ?? clause.version_year}, Effective: ${clause.effective_date}]\n` +
-        `Clause ${clause.clause_number} (${clause.section}, page ${clause.page_number ?? "n/a"}, Authority: ${clause.authority_level}):\n` +
-        `${clause.clause_text}` +
+        `User Role: ${input.role}\nQuestion: ${input.question}\n\n` +
+        `Authoritative Policy: ${clause.policy_title} [Section: ${clause.section}, Clause: ${clause.clause_number}, Page: ${clause.page_number ?? "n/a"}]\n` +
+        `Retrieved Policy Content:\n${clause.clause_text}\n` +
         circularBlock +
-        `\nSource URL: ${clause.source_url ?? "https://vignan.ac.in"}\n` +
-        `Detail level: ${detailed ? "include exact key clause wording and comprehensive administrative details" : "clear direct answer quoting exact percentages/numbers from the clause"}`,
+        `\n\nProvide a concise 3-4 line plain-language explanation of this rule.`,
     },
   ]);
 
   const answer_text = llmText.trim() || fallbackAnswer(input);
-  const sources = [candidateToSource(clause), ...related.slice(0, 2).map(candidateToSource)];
+  const sources = [candidateToSource(clause), ...related.map(candidateToSource)];
 
   return { answer_text, sources, low_confidence: false };
 }

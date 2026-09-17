@@ -112,15 +112,37 @@ export async function syncVignanPolicies(opts?: {
       const safeName = entry.title.replace(/[^a-zA-Z0-9._-]+/g, "_").slice(0, 80);
       const dest = path.join(cacheDir, `${safeName}.pdf`);
       try {
-        let buf: Buffer;
-        if (!fs.existsSync(dest) || fs.statSync(dest).size < 500) {
-          buf = await downloadPdf(entry.pdf_url, dest);
-          await sleep(300);
-        } else {
-          buf = fs.readFileSync(dest);
+        let buf: Buffer | null = null;
+        let text = "";
+        let hash = "";
+
+        try {
+          if (!fs.existsSync(dest) || fs.statSync(dest).size < 500) {
+            buf = await downloadPdf(entry.pdf_url, dest);
+            await sleep(300);
+          } else {
+            buf = fs.readFileSync(dest);
+          }
+          hash = computeSha256(buf);
+          text = await extractTextFromFile(dest, path.basename(dest));
+        } catch (pdfErr) {
+          if (entry.official_text) {
+            text = entry.official_text;
+            hash = crypto.createHash("sha256").update(text).digest("hex");
+          } else {
+            throw pdfErr;
+          }
         }
 
-        const hash = computeSha256(buf);
+        if (!text.trim() || text.trim().length < 50) {
+          if (entry.official_text) {
+            text = entry.official_text;
+            hash = crypto.createHash("sha256").update(text).digest("hex");
+          } else {
+            throw new Error("Extracted text too short");
+          }
+        }
+
         const retrieved_at = new Date().toISOString();
 
         // Check if existing policy with same hash already exists
@@ -131,11 +153,6 @@ export async function syncVignanPolicies(opts?: {
         if (exactMatch && opts?.replaceExisting === false) {
           skipped += 1;
           continue;
-        }
-
-        const text = await extractTextFromFile(dest, path.basename(dest));
-        if (!text.trim() || text.trim().length < 80) {
-          throw new Error("Extracted text too short");
         }
 
         const isRegulation = entry.document_type === "REGULATION" || entry.category.toLowerCase().includes("regulation");
