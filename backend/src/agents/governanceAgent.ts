@@ -13,16 +13,43 @@ function questionFit(clause: CandidateClause, question: string): number {
   let score = clause.similarity_score;
   const blob = `${clause.clause_text} ${clause.section} ${clause.policy_title}`.toLowerCase();
 
-  if (clause.department && q.includes(clause.department.toLowerCase())) score += 0.15;
-  if (/\blab/.test(q) && /\blab/.test(clause.clause_text.toLowerCase())) score += 0.15;
-  if (/condon/.test(q) && /condon/.test(clause.clause_text.toLowerCase())) score += 0.25;
-  if (/\b(refund|cancel|cancellation)\b/.test(q) && /\b(refund|cancel|cancellation)\b/.test(blob)) score += 0.35;
-  if (/\b(scholarship|scholarships)\b/.test(q) && /\b(scholarship|scholarships)\b/.test(blob)) score += 0.35;
-  if (/\b(revaluation|re-evaluation|verification)\b/.test(q) && /\b(revaluation|verification|examination)\b/.test(blob)) score += 0.35;
-  if (/\bhostel\b/.test(q) && /\bhostel\b/.test(blob)) score += 0.2;
-  if (/\b(entry|timing|return|curfew)\b/.test(q) && /\b(return|9:00|10:00|weekday|weekend)\b/.test(clause.clause_text.toLowerCase())) {
-    score += 0.2;
+  // Strict domain consistency checks
+  if (/\b(scholarship|scholarships|stipend|htra|fee concession)\b/.test(q)) {
+    if (blob.includes("scholarship")) score += 0.60;
+    else score -= 0.90;
   }
+  if (/\b(refund|cancellation|cancel admission|tuition refund)\b/.test(q)) {
+    if (blob.includes("admission") || blob.includes("refund")) score += 0.60;
+    else score -= 0.90;
+  }
+  if (/\b(consultancy|technical advisory)\b/.test(q)) {
+    if (blob.includes("consultancy")) score += 0.60;
+    else score -= 0.90;
+  }
+  if (/\b(research|seed money|scopus|sci journal)\b/.test(q)) {
+    if (blob.includes("research")) score += 0.60;
+    else score -= 0.90;
+  }
+  if (/\b(grievance|complaint|redressal)\b/.test(q)) {
+    if (blob.includes("grievance")) score += 0.60;
+    else score -= 0.90;
+  }
+  if (/\b(hostel|curfew|in-time|out-time)\b/.test(q)) {
+    if (blob.includes("hostel")) score += 0.60;
+    else score -= 0.90;
+  }
+  if (/\b(faculty leave|leave rule|casual leave|maternity leave|paternity leave)\b/.test(q)) {
+    if (blob.includes("leave") || blob.includes("service rules") || blob.includes("paternity")) score += 0.60;
+    else score -= 0.90;
+  }
+  if (/\b(industrial training|internship)\b/.test(q)) {
+    if (blob.includes("industrial training") || blob.includes("internship")) score += 0.60;
+    else score -= 0.90;
+  }
+
+  if (clause.department && q.includes(clause.department.toLowerCase())) score += 0.15;
+  if (/condon/.test(q) && /condon/.test(clause.clause_text.toLowerCase())) score += 0.25;
+
   return score;
 }
 

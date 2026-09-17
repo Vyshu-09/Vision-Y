@@ -92,11 +92,19 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
   const search = runPolicySearchAgent({
     question: input.question,
     role: input.role,
-    topK: 8,
+    topK: 12,
     user_program: input.user_program,
     user_regulation: input.user_regulation,
     user_department: input.user_department,
   });
+  logs.push(
+    log("query_analysis", {
+      question: input.question,
+      role: input.role,
+      user_regulation: input.user_regulation,
+      user_program: input.user_program,
+    }),
+  );
   logs.push(
     log(
       "policy_search",
@@ -104,10 +112,12 @@ export async function runPolicyPipeline(input: PipelineInput): Promise<PipelineO
         source_type: c.source_type,
         document_type: c.document_type,
         title: c.policy_title,
+        section: c.section,
         regulation: c.regulation,
         clause: c.clause_number,
         page: c.page_number,
         score: Math.round(c.similarity_score * 1000) / 1000,
+        status: "SELECTED",
       })),
     ),
   );

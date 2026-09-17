@@ -22,8 +22,78 @@ export function EvidencePanel({
   const conflict = response.escalated && response.flagged_for_admin;
   const ambiguity = response.needs_clarification;
 
+  const queryLog = response.logs?.find((l) => l.stage === "query_analysis")?.output as
+    | { domain?: string; intent?: string; normalized_query?: string; question?: string }
+    | undefined;
+
+  const searchLog = response.logs?.find((l) => l.stage === "policy_search")?.output as
+    | Array<{
+        title: string;
+        section?: string;
+        clause: string;
+        page?: number | null;
+        score: number;
+        status?: string;
+      }>
+    | undefined;
+
   return (
     <div className="mt-4 space-y-3">
+      {detailed && (
+        <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 p-4 text-xs">
+          <div className="flex items-center justify-between border-b border-indigo-100 pb-2 mb-2">
+            <span className="font-bold text-indigo-950 uppercase tracking-wider">🛠️ RAG Pipeline Debug Trace</span>
+            <span className="text-[10px] font-semibold bg-indigo-200/70 text-indigo-900 px-2 py-0.5 rounded-full">
+              Developer / Admin View
+            </span>
+          </div>
+
+          {queryLog && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3 bg-white p-2.5 rounded-lg border border-indigo-100">
+              <div>
+                <span className="text-slate-400 uppercase text-[10px] font-bold block">User Question:</span>
+                <span className="font-medium text-slate-800">{queryLog.question}</span>
+              </div>
+              {queryLog.domain && (
+                <div>
+                  <span className="text-slate-400 uppercase text-[10px] font-bold block">Detected Domain:</span>
+                  <span className="font-bold text-indigo-700">{queryLog.domain}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {searchLog && searchLog.length > 0 && (
+            <div>
+              <span className="text-slate-500 uppercase text-[10px] font-bold block mb-1.5">
+                Retrieved Chunks & Reranking Scores:
+              </span>
+              <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                {searchLog.map((c, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between p-2 rounded bg-white border border-slate-200 text-[11px]"
+                  >
+                    <div className="truncate pr-2">
+                      <strong className="text-slate-900">{c.title}</strong>
+                      <span className="text-slate-500"> — {c.section ?? "General"} (Clause {c.clause}{c.page != null ? `, p.${c.page}` : ""})</span>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded text-[10px]">
+                        score: {c.score}
+                      </span>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">
+                        {c.status ?? "SELECTED"}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <SourceCard sources={response.sources} detailed={detailed} />
 
       <details className="rounded-xl border border-line bg-white open:shadow-sm">

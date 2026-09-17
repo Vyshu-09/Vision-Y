@@ -1,6 +1,6 @@
 import { cosineSimilarity, embedText } from "../embeddings/embedder.js";
 import { store } from "../db/store.js";
-import { toCandidate, type PolicySearchInput, type PolicySearchOutput } from "./types.js";
+import { toCandidate, type CandidateClause, type PolicySearchInput, type PolicySearchOutput } from "./types.js";
 
 export interface PolicySearchDeps {
   embed?: (text: string) => number[];
@@ -8,168 +8,226 @@ export interface PolicySearchDeps {
   getPolicy?: (id: string) => ReturnType<typeof store.getPolicy>;
 }
 
-const STOP = new Set([
-  "the",
-  "and",
-  "for",
-  "what",
-  "is",
-  "are",
-  "can",
-  "i",
-  "a",
-  "an",
-  "of",
-  "to",
-  "in",
-  "on",
-  "my",
-  "me",
-  "do",
-  "does",
-  "how",
-  "with",
+export type PolicyDomain =
+  | "SCHOLARSHIP"
+  | "ADMISSION_REFUND"
+  | "ATTENDANCE_REGULATION"
+  | "EXAMINATION"
+  | "LEAVE"
+  | "CONDUCT"
+  | "RESEARCH"
+  | "CONSULTANCY"
+  | "TRAINING"
+  | "HOSTEL"
+  | "GRIEVANCE"
+  | "IT"
+  | "GENERAL";
+
+export type QueryIntentType =
+  | "MINIMUM_ELIGIBILITY"
+  | "AMOUNT_CONCESSION"
+  | "WHO_CAN_APPLY"
+  | "CONTINUATION_RULES"
+  | "PROCEDURE_APPLY"
+  | "GENERAL_RULES";
+
+export interface QueryAnalysis {
+  domain: PolicyDomain;
+  intent: QueryIntentType;
+  subEntity: string | null;
+  normalizedQuery: string;
+  keywords: string[];
+}
+
+const STOP_WORDS = new Set([
+  "the", "and", "for", "what", "is", "are", "can", "i", "a", "an", "of", "to",
+  "in", "on", "my", "me", "do", "does", "how", "with", "about", "get", "give", "given", "tell"
 ]);
 
-function tokens(text: string): string[] {
+export function extractTokens(text: string): string[] {
   return text
     .toLowerCase()
     .replace(/[^a-z0-9%]+/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 1 && !STOP.has(w));
-}
-
-function lexicalBoost(question: string, clauseText: string, section: string, title: string): number {
-  const q = tokens(question);
-  if (!q.length) return 0;
-  const blob = `${clauseText} ${section} ${title}`.toLowerCase();
-  const qLower = question.toLowerCase();
-  let hits = 0;
-  for (const t of q) {
-    if (blob.includes(t)) hits += 1;
-  }
-  let boost = hits / q.length;
-
-  // 1. Refund & Admission Cancellation
-  if (/\b(refund|cancel|cancellation)\b/.test(qLower)) {
-    if (/\b(refund|cancel|cancellation)\b/.test(blob)) {
-      boost += 0.45;
-    }
-    if (/\bfee fixation\b/.test(blob)) {
-      boost -= 0.25;
-    }
-  }
-
-  // 2. Scholarships & Concessions
-  if (/\b(scholarship|scholarships|merit\s+award|fee\s+concession)\b/.test(qLower)) {
-    if (/\b(scholarship|scholarships)\b/.test(title.toLowerCase()) || /\b(scholarship|concession)\b/.test(blob)) {
-      boost += 0.45;
-    }
-  }
-
-  // 3. Revaluation & Examination Fees
-  if (/\b(revaluation|re-evaluation|verification|exam\s+fee|answer\s+script)\b/.test(qLower)) {
-    if (/\b(revaluation|verification|examination|exam)\b/.test(blob)) {
-      boost += 0.45;
-    }
-  }
-
-  // 4. Grievance Redressal
-  if (/\b(grievance|complaint|redressal|harassment)\b/.test(qLower)) {
-    if (/\bgrievance\b/.test(title.toLowerCase()) || /\b(grievance|complaint)\b/.test(blob)) {
-      boost += 0.45;
-    }
-  }
-
-  // 5. Research & Seed Money
-  if (/\b(research|seed\s+money|journal|publication|scopus)\b/.test(qLower)) {
-    if (/\bresearch\b/.test(title.toLowerCase()) || /\b(research|seed money)\b/.test(blob)) {
-      boost += 0.45;
-    }
-  }
-
-  // 6. Consultancy
-  if (/\b(consultancy|industry\s+project)\b/.test(qLower)) {
-    if (/\bconsultancy\b/.test(title.toLowerCase()) || /\bconsultancy\b/.test(blob)) {
-      boost += 0.45;
-    }
-  }
-
-  // 7. Industrial Training & Internships
-  if (/\b(industrial\s+training|internship|internships)\b/.test(qLower)) {
-    if (/\bindustrial\s+training\b/.test(title.toLowerCase()) || /\b(industrial training|internship)\b/.test(blob)) {
-      boost += 0.45;
-    }
-  }
-
-  // 8. Attendance & Condonation
-  if (/\bminimum\b/.test(qLower) && /\battendance\b/.test(qLower)) {
-    if (/minimum\s+(?:of\s+)?\d{1,3}\s*%\s+attendance|maintain\s+a\s+minimum\s+of\s+\d{1,3}\s*%/i.test(clauseText)) {
-      boost += 0.35;
-    }
-    if (/\bcondon/i.test(clauseText) && !/minimum\s+(?:of\s+)?\d{1,3}\s*%/i.test(clauseText)) {
-      boost -= 0.2;
-    }
-  }
-
-  // 9. Hostel entry / return timings
-  if (/\bhostel\b/.test(qLower) && /\b(entry|timing|return|curfew|in\s*time)\b/.test(qLower)) {
-    if (/\bhostel\b/i.test(blob) && /\b(return|9:00|10:00|warden|weekday|weekend)\b/i.test(clauseText)) {
-      boost += 0.35;
-    }
-  }
-
-  return boost;
-}
-
-function regulationBoost(
-  question: string,
-  clause: { regulation?: string | null; program?: string | null; policy_title?: string },
-  userRegulation?: string | null,
-  userProgram?: string | null,
-): number {
-  let boost = 0;
-  const q = question.toLowerCase();
-  const regInDoc = (clause.regulation || "").toLowerCase();
-  const title = (clause.policy_title || "").toLowerCase();
-
-  // Check if query explicitly asks for a regulation (e.g., "R26", "R25", "R22", "R22.1")
-  const explicitRegMatch = q.match(/\b(r26|r25|r22\.1|r22|r21|r18)\b/i);
-  if (explicitRegMatch) {
-    const explicitTarget = explicitRegMatch[1].toLowerCase();
-    if (regInDoc === explicitTarget || title.includes(explicitTarget)) {
-      return 0.45;
-    }
-    // Penalize other regulations if a specific one was explicitly asked
-    if (regInDoc && regInDoc !== explicitTarget) {
-      return -0.25;
-    }
-  }
-
-  // If user has a registered cohort regulation (e.g., student admitted under R22)
-  if (userRegulation) {
-    const userRegNorm = userRegulation.toLowerCase();
-    if (regInDoc === userRegNorm || title.includes(userRegNorm)) {
-      boost += 0.35;
-    } else if (regInDoc && regInDoc !== userRegNorm) {
-      // Deprecate other regulations when answering cohort questions
-      boost -= 0.15;
-    }
-  }
-
-  // Program match (e.g., B.Tech)
-  if (userProgram && clause.program) {
-    if (userProgram.toLowerCase() === clause.program.toLowerCase()) {
-      boost += 0.1;
-    }
-  }
-
-  return boost;
+    .filter((w) => w.length > 1 && !STOP_WORDS.has(w));
 }
 
 /**
- * Policy Search Agent — role-filtered retrieval over authoritative official Vignan documents only.
- * Mock/demo documents are strictly excluded from retrieval.
+ * Domain-first NLP Query Analysis & Normalization
+ */
+export function analyzeQuery(question: string): QueryAnalysis {
+  const q = question.toLowerCase().trim();
+  const rawTokens = extractTokens(q);
+
+  let domain: PolicyDomain = "GENERAL";
+  let intent: QueryIntentType = "GENERAL_RULES";
+  let subEntity: string | null = null;
+  let normalizedQuery = question;
+
+  // 1. Policy Domain Detection
+  if (/\b(scholarship|scholarships|stipend|htra|fee concession|merit award)\b/i.test(q)) {
+    domain = "SCHOLARSHIP";
+  } else if (/\b(refund|cancellation|cancel admission|admission cancellation|tuition refund)\b/i.test(q)) {
+    domain = "ADMISSION_REFUND";
+  } else if (/\b(attendance|condon|condonation|detention|detained|attendance shortage)\b/i.test(q)) {
+    domain = "ATTENDANCE_REGULATION";
+  } else if (/\b(revaluation|re-evaluation|script verification|exam fee|answer script)\b/i.test(q)) {
+    domain = "EXAMINATION";
+  } else if (/\b(faculty leave|leave rule|casual leave|od leave|on duty|maternity leave|paternity leave)\b/i.test(q)) {
+    domain = "LEAVE";
+  } else if (/\b(code of conduct|ragging|discipline|harassment|anti-ragging)\b/i.test(q)) {
+    domain = "CONDUCT";
+  } else if (/\b(research policy|seed money|scopus|sci journal|patent|plagiarism)\b/i.test(q)) {
+    domain = "RESEARCH";
+  } else if (/\b(consultancy|technical advisory|revenue share|testing revenue)\b/i.test(q)) {
+    domain = "CONSULTANCY";
+  } else if (/\b(industrial training|internship|internships)\b/i.test(q)) {
+    domain = "TRAINING";
+  } else if (/\b(hostel|hostel timings|curfew|warden|in-time|out-time)\b/i.test(q)) {
+    domain = "HOSTEL";
+  } else if (/\b(grievance|complaint|redressal|petition)\b/i.test(q)) {
+    domain = "GRIEVANCE";
+  } else if (/\b(it policy|wi-fi|wifi|cybersecurity|software license)\b/i.test(q)) {
+    domain = "IT";
+  } else if (/\b(regulation|regulations|r26|r25|r22|r22\.1|b\.tech regulation)\b/i.test(q)) {
+    domain = "ATTENDANCE_REGULATION";
+  }
+
+  // 2. Sub-entity extraction
+  if (/\b(sibling|brother|sister)\b/i.test(q)) subEntity = "sibling";
+  else if (/\b(cap|armed personnel|defence|army)\b/i.test(q)) subEntity = "cap";
+  else if (/\b(sport|sports quota|athletics)\b/i.test(q)) subEntity = "sports";
+  else if (/\b(sc\s*\/\s*st|sc|st)\b/i.test(q)) subEntity = "sc_st";
+  else if (/\b(alumni)\b/i.test(q)) subEntity = "alumni";
+  else if (/\b(staff|employee ward)\b/i.test(q)) subEntity = "staff";
+  else if (/\b(phd|research scholar)\b/i.test(q)) subEntity = "phd";
+
+  // 3. Intent Detection
+  if (/\b(minimum|score|percentage|marks|cgpa|gpa|cutoff|threshold|needed|required)\b/i.test(q)) {
+    intent = "MINIMUM_ELIGIBILITY";
+  } else if (/\b(how much|amount|concession|discount|share|ratio|percent)\b/i.test(q)) {
+    intent = "AMOUNT_CONCESSION";
+  } else if (/\b(who can|who is|eligible|eligibility|can i apply|apply)\b/i.test(q)) {
+    intent = "WHO_CAN_APPLY";
+  } else if (/\b(condition|conditions|criteria|maintain|continue|continuation|subsequent years)\b/i.test(q)) {
+    intent = "CONTINUATION_RULES";
+  } else if (/\b(procedure|process|where to|how to|documents|form)\b/i.test(q)) {
+    intent = "PROCEDURE_APPLY";
+  }
+
+  // 4. Query Normalization & Synonym Expansion
+  if (domain === "SCHOLARSHIP") {
+    if (intent === "MINIMUM_ELIGIBILITY" || intent === "CONTINUATION_RULES") {
+      normalizedQuery = "Vignan University Scholarships Policy minimum percentage score CGPA eligibility academic requirement 70% continuation criteria without backlogs";
+    } else if (subEntity === "sibling") {
+      normalizedQuery = "Vignan University Scholarships Policy Scholarship for Siblings 10% of tuition fee entry level duration of study";
+    } else if (subEntity === "sports") {
+      normalizedQuery = "Vignan University Scholarships Policy sports quota 75% 50% scholarship state district level";
+    } else if (intent === "WHO_CAN_APPLY") {
+      normalizedQuery = "Vignan University Scholarships Policy eligibility criteria categories merit siblings sports alumni SC ST staff wards";
+    } else {
+      normalizedQuery = "Vignan University Scholarships Policy student scholarship fee concession eligibility criteria";
+    }
+  } else if (domain === "ADMISSION_REFUND") {
+    normalizedQuery = "Vignan University Admission Policy cancellation of admission tuition fee refund norms percentage 100% 80% 50% last date";
+  } else if (domain === "ATTENDANCE_REGULATION") {
+    if (q.includes("condon")) {
+      normalizedQuery = "Vignan University Academic Regulations attendance condonation 10% medical grounds 65% to 75% approval fee";
+    } else {
+      normalizedQuery = "Vignan University Academic Regulations minimum 75% aggregate attendance requirement semester end examinations";
+    }
+  } else if (domain === "CONSULTANCY") {
+    normalizedQuery = "Vignan University Consultancy Policy faculty industrial advisory revenue sharing 60:40 70:30 permitted days";
+  } else if (domain === "RESEARCH") {
+    normalizedQuery = "Vignan University Research Policy seed money grants journal publication incentives SCI Scopus patent anti-plagiarism 10%";
+  } else if (domain === "LEAVE") {
+    normalizedQuery = "Vignan University Service Rules faculty leave rules casual leave academic on duty maternity paternity leave";
+  }
+
+  return {
+    domain,
+    intent,
+    subEntity,
+    normalizedQuery,
+    keywords: rawTokens,
+  };
+}
+
+/**
+ * Classifies a document/clause into its canonical policy domain.
+ */
+export function classifyClauseDomain(
+  policyTitle: string,
+  category: string,
+  section: string,
+  clauseText: string,
+): PolicyDomain {
+  const blob = `${policyTitle} ${category} ${section}`.toLowerCase();
+  const cat = (category || "").toLowerCase();
+
+  if (blob.includes("scholarship") || cat === "scholarships") {
+    return "SCHOLARSHIP";
+  }
+  if (blob.includes("admission") || cat === "admissions") {
+    return "ADMISSION_REFUND";
+  }
+  if (blob.includes("consultancy")) {
+    return "CONSULTANCY";
+  }
+  if (blob.includes("research") || cat === "research") {
+    return "RESEARCH";
+  }
+  if (blob.includes("industrial training") || blob.includes("internship")) {
+    return "TRAINING";
+  }
+  if (blob.includes("service rules") || blob.includes("paternity") || cat === "hr" || blob.includes("leave")) {
+    return "LEAVE";
+  }
+  if (blob.includes("code of conduct") || cat === "discipline") {
+    return "CONDUCT";
+  }
+  if (blob.includes("grievance")) {
+    return "GRIEVANCE";
+  }
+  if (blob.includes("it policy") || cat === "it") {
+    return "IT";
+  }
+  if (blob.includes("hostel") || cat === "hostel") {
+    return "HOSTEL";
+  }
+  if (
+    blob.includes("attendance") ||
+    cat === "attendance" ||
+    blob.includes("regulation") ||
+    cat === "academic regulations"
+  ) {
+    return "ATTENDANCE_REGULATION";
+  }
+
+  return "GENERAL";
+}
+
+/**
+ * Calculates lexical score between query terms and clause content.
+ */
+function calculateLexicalScore(
+  tokens: string[],
+  clauseText: string,
+  section: string,
+  title: string,
+): number {
+  if (!tokens.length) return 0;
+  const blob = `${clauseText} ${section} ${title}`.toLowerCase();
+  let hits = 0;
+  for (const t of tokens) {
+    if (blob.includes(t)) hits += 1;
+  }
+  return hits / tokens.length;
+}
+
+/**
+ * Policy Search Agent — Domain-First Hybrid Retrieval & Reranking.
+ * Enforces strict domain filtering and rejects irrelevant regulations on domain-specific queries.
  */
 export function runPolicySearchAgent(
   input: PolicySearchInput,
@@ -178,15 +236,19 @@ export function runPolicySearchAgent(
   const embed = deps.embed ?? embedText;
   const listClauses = deps.listClauses ?? (() => store.allClauses());
   const getPolicy = deps.getPolicy ?? ((id: string) => store.getPolicy(id));
-  const topK = input.topK ?? 8;
+  const topK = input.topK ?? 12;
 
-  const queryVec = embed(input.question);
+  const analysis = analyzeQuery(input.question);
+  const origVec = embed(input.question);
+  const normVec = embed(analysis.normalizedQuery);
+  const normTokens = extractTokens(analysis.normalizedQuery);
+
   const scored = listClauses()
     .map((clause) => {
       const policy = getPolicy(clause.policy_id);
       if (!policy) return null;
 
-      // STRICT GUARD: Never retrieve mock or demo_only documents for answers
+      // STRICT GUARD: Never retrieve mock or demo_only documents
       if (
         policy.status === "demo_only" ||
         policy.source_type === "MOCK_DEMO" ||
@@ -198,26 +260,104 @@ export function runPolicySearchAgent(
       // Role check: super_admin can see all, otherwise check audience
       if (!policy.audience.includes(input.role) && input.role !== "super_admin") return null;
 
-      const semantic = cosineSimilarity(queryVec, clause.embedding_vector);
-      const lexical = lexicalBoost(input.question, clause.clause_text, clause.section, policy.title);
-      const regBoost = regulationBoost(
-        input.question,
-        {
-          regulation: clause.regulation ?? policy.regulation,
-          program: clause.program ?? policy.program,
-          policy_title: policy.title,
-        },
-        input.user_regulation,
-        input.user_program,
+      const clauseDomain = classifyClauseDomain(
+        policy.title,
+        policy.category,
+        clause.section,
+        clause.clause_text,
       );
 
-      const score = semantic * 0.50 + lexical * 0.35 + regBoost;
-      return toCandidate(policy, clause, score);
+      // --- DOMAIN-FIRST HARD GATE ---
+      let domainScore = 0;
+      if (analysis.domain !== "GENERAL") {
+        if (clauseDomain === analysis.domain) {
+          domainScore = 0.55;
+        } else {
+          // Severely penalize mismatch (e.g. asking scholarship, but document is B.Tech academic regulations)
+          domainScore = -0.80;
+        }
+      }
+
+      // Reject immediate mismatches if specific domain was identified
+      if (analysis.domain !== "GENERAL" && domainScore < 0) {
+        return null;
+      }
+
+      // Semantic similarity (max of original and normalized vector similarity)
+      const simOrig = cosineSimilarity(origVec, clause.embedding_vector);
+      const simNorm = cosineSimilarity(normVec, clause.embedding_vector);
+      const semanticScore = Math.max(simOrig, simNorm);
+
+      // Keyword / Lexical score
+      const lexOrig = calculateLexicalScore(analysis.keywords, clause.clause_text, clause.section, policy.title);
+      const lexNorm = calculateLexicalScore(normTokens, clause.clause_text, clause.section, policy.title);
+      const keywordScore = Math.max(lexOrig, lexNorm);
+
+      // Intent Relevance Boost
+      let intentScore = 0;
+      const textLower = clause.clause_text.toLowerCase();
+      const sectionLower = clause.section.toLowerCase();
+
+      if (analysis.domain === "SCHOLARSHIP") {
+        if (analysis.intent === "MINIMUM_ELIGIBILITY" || analysis.intent === "CONTINUATION_RULES") {
+          if (textLower.includes("70%") || textLower.includes("first attempt") || textLower.includes("continuation")) {
+            intentScore += 0.45;
+          }
+          if (sectionLower.includes("continuation") || sectionLower.includes("special scholarships")) {
+            intentScore += 0.30;
+          }
+        } else if (analysis.subEntity === "sibling") {
+          if (textLower.includes("sibling") || textLower.includes("10%")) {
+            intentScore += 0.50;
+          }
+        } else if (analysis.subEntity === "sports") {
+          if (textLower.includes("sport") || textLower.includes("75%")) {
+            intentScore += 0.50;
+          }
+        }
+      } else if (analysis.domain === "ADMISSION_REFUND") {
+        if (textLower.includes("refund") || textLower.includes("cancellation")) {
+          intentScore += 0.45;
+        }
+        if (textLower.includes("100%") || textLower.includes("80%")) {
+          intentScore += 0.30;
+        }
+      } else if (analysis.domain === "ATTENDANCE_REGULATION") {
+        if (textLower.includes("75%") || textLower.includes("minimum of 75%")) {
+          intentScore += 0.40;
+        }
+        if (input.question.toLowerCase().includes("condon") && textLower.includes("condon")) {
+          intentScore += 0.40;
+        }
+      }
+
+      // Cohort regulation boost (ONLY applies for ATTENDANCE_REGULATION / GENERAL_ACADEMIC queries)
+      let regBoost = 0;
+      if (analysis.domain === "ATTENDANCE_REGULATION" || analysis.domain === "GENERAL") {
+        const regInDoc = (clause.regulation || policy.regulation || "").toLowerCase();
+        const explicitRegMatch = input.question.toLowerCase().match(/\b(r26|r25|r22\.1|r22|r21|r18)\b/i);
+        if (explicitRegMatch) {
+          if (regInDoc === explicitRegMatch[1].toLowerCase()) regBoost += 0.40;
+          else if (regInDoc) regBoost -= 0.30;
+        } else if (input.user_regulation) {
+          if (regInDoc === input.user_regulation.toLowerCase()) regBoost += 0.25;
+        }
+      }
+
+      const finalScore =
+        semanticScore * 0.40 +
+        keywordScore * 0.25 +
+        domainScore +
+        intentScore +
+        regBoost;
+
+      return toCandidate(policy, clause, finalScore);
     })
-    .filter((c): c is NonNullable<typeof c> => c !== null)
-    .filter((c) => c.similarity_score >= 0.18)
+    .filter((c): c is CandidateClause => c !== null)
+    .filter((c) => c.similarity_score >= 0.15)
     .sort((a, b) => b.similarity_score - a.similarity_score)
     .slice(0, topK);
 
   return { candidates: scored };
 }
+

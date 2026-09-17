@@ -28,7 +28,10 @@ export function runAmbiguityAgent(question: string): AmbiguityResult {
     ]);
   }
 
-  if ((/\beligib/.test(q) || /\bcan i (write|appear|sit)\b/.test(q)) && !/\battendance\b|\bexam/.test(q)) {
+  if (
+    (/\beligib/.test(q) || /\bcan i (write|appear|sit)\b/.test(q)) &&
+    !/\battendance\b|\bexam\b|\bscholarship\b|\badmission\b/.test(q)
+  ) {
     return clarify("Which eligibility are you asking about?", [
       { id: "attendance_eligibility", label: "Attendance / exam eligibility" },
       { id: "fee_eligibility", label: "Fee payment eligibility" },
@@ -78,7 +81,7 @@ export function runAmbiguityAgent(question: string): AmbiguityResult {
   const bareScholarshipPercentage =
     /\bscholarship\b/.test(q) &&
     /\b(percentage|percent|concession|discount)\b/.test(q) &&
-    !/\b(cgpa|gpa|minimum|needed|required|score|marks|cutoff|maintain|continuation|continue|sibling|brother|sister|sport|alumni|staff|sc|st|cap|defence|phd|first attempt)\b/.test(q);
+    !/\b(cgpa|gpa|minimum|need|needed|require|required|score|marks|cutoff|maintain|continuation|continuing|continue|sibling|brother|sister|sport|alumni|staff|sc|st|cap|defence|phd|first attempt)\b/.test(q);
   if (bareScholarshipPercentage) {
     return clarify("Vignan has different scholarship categories. Do you mean the academic scholarship, sibling scholarship, or another category?", [
       { id: "academic_merit", label: "Academic Merit Scholarship" },

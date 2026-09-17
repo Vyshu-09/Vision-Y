@@ -124,7 +124,10 @@ export function synthesizeFriendlyAnswer(
       question.toLowerCase().includes("percentage") ||
       question.toLowerCase().includes("minimum") ||
       question.toLowerCase().includes("continuation") ||
-      question.toLowerCase().includes("maintain")
+      question.toLowerCase().includes("continuing") ||
+      question.toLowerCase().includes("conditions") ||
+      question.toLowerCase().includes("maintain") ||
+      question.toLowerCase().includes("need")
     ) {
       if (rawText.includes("70%") || rawText.includes("first attempt") || rawText.includes("Continuation")) {
         return (

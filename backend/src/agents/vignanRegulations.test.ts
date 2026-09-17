@@ -991,5 +991,101 @@ describe("Task 15 — Authoritative Vignan Regulations & Policies Test Suite", (
     assert.equal(res.needs_clarification, true, "Must ask for clarification for ambiguous percentage question");
     assert.ok(res.clarification_prompt?.toLowerCase().includes("scholarship categories"));
   });
+
+  it("23. Domain-First Retrieval: 'minimum percentage to get scholarship' retrieves Scholarships Policy and NOT B.Tech R25", async () => {
+    const res = await runPolicyPipeline({
+      question: "minimum percentage to get scholarship",
+      role: "student",
+      userId: "test-student-id",
+      user_regulation: "R25", // Even if student is in R25 cohort!
+      user_program: "B.Tech",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources.length > 0, "Must return sources");
+    const topSource = res.sources[0];
+    assert.equal(topSource.policy_title, "Scholarships Policy", "Top source MUST be Scholarships Policy");
+    assert.notEqual(topSource.policy_title, "B.Tech R25 Regulations", "Top source MUST NOT be B.Tech R25 Regulations");
+    assert.ok(res.answer_text.includes("70%"), "Answer must contain 70% requirement from official policy");
+  });
+
+  it("24. Domain-First Retrieval: 'minimum CGPA required for scholarship' retrieves Scholarships Policy", async () => {
+    const res = await runPolicyPipeline({
+      question: "minimum CGPA required for scholarship",
+      role: "student",
+      userId: "test-student-id",
+      user_regulation: "R25",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources[0].policy_title.includes("Scholarship"), "Must retrieve Scholarships Policy");
+  });
+
+  it("25. Domain-First Retrieval: 'what percentage do I need for scholarship?' retrieves Scholarships Policy", async () => {
+    const res = await runPolicyPipeline({
+      question: "what percentage do I need for scholarship?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources[0].policy_title.includes("Scholarship"), "Must retrieve Scholarships Policy");
+  });
+
+  it("26. Domain-First Retrieval: 'how much scholarship do siblings get?' retrieves Scholarships Policy (10%)", async () => {
+    const res = await runPolicyPipeline({
+      question: "how much scholarship do siblings get?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources[0].policy_title.includes("Scholarship"), "Must retrieve Scholarships Policy");
+    assert.ok(res.answer_text.includes("10%"), "Must state 10%");
+  });
+
+  it("27. Domain-First Retrieval: 'who is eligible for scholarship?' retrieves Scholarships Policy", async () => {
+    const res = await runPolicyPipeline({
+      question: "who is eligible for scholarship?",
+      role: "student",
+      userId: "test-student-id",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources[0].policy_title.includes("Scholarship"), "Must retrieve Scholarships Policy");
+  });
+
+  it("28. Domain-First Retrieval: 'what are the conditions for continuing scholarship?' retrieves continuation rules (70%)", async () => {
+    const res = await runPolicyPipeline({
+      question: "what are the conditions for continuing scholarship?",
+      role: "student",
+      userId: "test-student-id",
+      user_regulation: "R26",
+    });
+
+    assert.equal(res.is_out_of_scope ?? false, false);
+    assert.ok(res.sources[0].policy_title.includes("Scholarship"), "Must retrieve Scholarships Policy");
+    assert.ok(res.answer_text.includes("70%"), "Must state 70% continuation condition");
+  });
+
+  it("29. Negative Retrieval Test: Academic Regulations / Honors / Exit MUST NOT be retrieved for scholarship queries", async () => {
+    const searchRes = runPolicySearchAgent({
+      question: "minimum percentage to get scholarship",
+      role: "student",
+      user_regulation: "R25",
+      user_program: "B.Tech",
+    });
+
+    assert.ok(searchRes.candidates.length > 0, "Must have candidates");
+    const hasWrongDoc = searchRes.candidates.some(
+      (c) =>
+        c.policy_title.includes("B.Tech R25 Regulations") ||
+        c.section.toLowerCase().includes("honor") ||
+        c.section.toLowerCase().includes("exit"),
+    );
+    assert.equal(hasWrongDoc, false, "B.Tech R25 Regulations / Honor clauses must be excluded from scholarship results");
+    assert.equal(searchRes.candidates[0].policy_title, "Scholarships Policy");
+  });
 });
+
 

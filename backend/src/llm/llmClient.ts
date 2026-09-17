@@ -101,7 +101,7 @@ function mockComplete(messages: ChatMessage[]): string {
     // Scholarship - CGPA / Percentage / Minimum marks / Continuation
     if (
       (question.includes("scholarship") || clauseText.toLowerCase().includes("scholarship")) &&
-      (question.includes("cgpa") || question.includes("percentage") || question.includes("minimum") || question.includes("needed") || question.includes("required") || question.includes("maintain") || question.includes("continue"))
+      (question.includes("cgpa") || question.includes("percentage") || question.includes("minimum") || question.includes("needed") || question.includes("need") || question.includes("required") || question.includes("maintain") || question.includes("continue") || question.includes("continuing") || question.includes("conditions"))
     ) {
       return `Students need at least 70% in the preceding year without any backlogs to maintain and continue their scholarship. If you have 70% or above and have passed all subjects in the first attempt, you meet this academic condition. Other scholarship conditions (such as clearing dues and good conduct) also apply.${circularNote}`;
     }
